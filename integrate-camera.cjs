@@ -1,0 +1,20 @@
+const fs=require('node:fs'),path=require('node:path');const root=path.join(__dirname,'project'),base='app/src/main/java/de/mo/bibliothek/';
+function edit(name,fn){const p=path.join(root,name),s=fs.readFileSync(p,'utf8').replace(/\r\n/g,'\n');const n=fn(s);if(n===s)throw Error(name);fs.writeFileSync(p,n);}
+edit(base+'MainActivity.kt',s=>s.replace('import de.mo.bibliothek.ui.AddScreen','import de.mo.bibliothek.ui.CameraScreen\nimport de.mo.bibliothek.ui.RecognitionScreen\nimport de.mo.bibliothek.ui.AddScreen')
+ .replace('        enableEdgeToEdge()','        coil.Coil.setImageLoader(coil.ImageLoader.Builder(this).components { add(coil.decode.SvgDecoder.Factory()) }.build())\n        enableEdgeToEdge()')
+ .replace('private sealed interface Layer {','private sealed interface Layer {\n    data object Camera : Layer\n    data class Recognition(val uri: Uri) : Layer\n    data class Search(val query: String) : Layer')
+ .replace('    val addActions = AddActions(','    val addActions = AddActions(\n        camera = { push(Layer.Camera) },\n        editions = model::editions,')
+ .replace('                is Layer.Detail -> {',
+ '                Layer.Camera -> Surface(Modifier.fillMaxSize()) { CameraScreen(\n                    onCaptured = { uri -> layers = layers.dropLast(1) + Layer.Recognition(uri) }, onClose = ::pop) }\n                is Layer.Recognition -> Surface(Modifier.fillMaxSize()) { RecognitionScreen(layer.uri, model::recognizeCover,\n                    onSearch = { title, author -> layers = layers.dropLast(1) + Layer.Search(listOf(title, author).filter { it.isNotBlank() }.joinToString(" ")) },\n                    onBack = { layers = layers.dropLast(1) + Layer.Camera }) }\n                is Layer.Search -> Surface(Modifier.fillMaxSize()) { AddScreen(addActions, androidx.compose.foundation.layout.PaddingValues(), initialQuery = layer.query, onClose = ::pop, searchOnOpen = true) }\n                is Layer.Detail -> {'));
+edit(base+'ui/AddScreen.kt',s=>s.replace('import androidx.compose.material.icons.outlined.Search','import androidx.compose.material.icons.outlined.Search\nimport androidx.compose.material.icons.outlined.PhotoCamera\nimport de.mo.bibliothek.data.sameWork')
+ .replace('class AddActions(','class AddActions(\n    val camera: () -> Unit,\n    val editions: suspend (Found) -> Result<List<Found>>,')
+ .replace('    initialQuery: String = "",','    initialQuery: String = "",\n    searchOnOpen: Boolean = false,')
+ .replace('    var preview by remember { mutableStateOf<Found?>(null) }','    var preview by remember { mutableStateOf<Found?>(null) }\n    var work by remember { mutableStateOf<Found?>(null) }\n    var searchJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }')
+ .replace('        scope.launch {\n            val result = actions.search(q)','        searchJob?.cancel()\n        searchJob = scope.launch {\n            val result = actions.search(q)')
+ .replace('if (enrichTitle != null && initialQuery.isNotEmpty()) run()','if ((enrichTitle != null || searchOnOpen) && initialQuery.isNotEmpty()) run()')
+ .replace('            // Inspirations- und Weisheitskarte für den leeren Zustand',
+ '            item {\n                Button(onClick = actions.camera, modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp).height(56.dp)) {\n                    Icon(Icons.Outlined.PhotoCamera, null); Spacer(Modifier.width(10.dp)); Text(tr("Buch mit Kamera erkennen", "التعرف على كتاب بالكاميرا"))\n                }\n            }\n\n            // Zuletzt hinzugefügte Bücher')
+ .replace('items(results)', 'items(results.fold(mutableListOf<Found>()) { works, found -> works.apply { if (none { sameWork(it, found) }) add(found) } })')
+ .replace('preview = found', 'work = found')
+ .replace('    preview?.let { found ->','    work?.let { selected -> EditionSheet(selected, results, actions.editions, { found -> work = null; preview = found }, { work = null }) }\n\n    preview?.let { found ->'));
+console.log('Kamera, Werk- und Ausgabeauswahl mit der vorhandenen Navigation verbunden.');

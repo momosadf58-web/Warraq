@@ -1,0 +1,11 @@
+Collecting duckdb==1.4.1
+  Downloading duckdb-1.4.1-cp312-cp312-win_amd64.whl.metadata (14 kB)
+Downloading duckdb-1.4.1-cp312-cp312-win_amd64.whl (12.3 MB)
+   ---------------------------------------- 12.3/12.3 MB 6.4 MB/s  0:00:01
+Installing collected packages: duckdb
+Successfully installed duckdb-1.4.1
+Parquet-Metadatenquellen: 3
+Beschreibungen: 1147
+Beschreibungen: 2221
+Beschreibungen: 3066
+Fertig: 3066 4804147
