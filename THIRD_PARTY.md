@@ -9,7 +9,7 @@ Die [PolyForm-Noncommercial-Lizenz](LICENSE) dieses Repositorys gilt nur für de
 | Bestandteil | Wo | Lizenz |
 |---|---|---|
 | [Three.js](https://github.com/mrdoob/three.js) r170 | `assets/room/three.module.min.js` | MIT (siehe `assets/room/THREE-LICENSE.txt`) |
-| [Tesseract tessdata](https://github.com/tesseract-ocr/tessdata_best) 4.1.0 (Arabisch best, Deutsch und Englisch fast) | `assets/tessdata/` | Apache 2.0 (siehe `Code/Android/LIZENZEN/Tesseract-models-Apache-2.0.txt`) |
+| [Tesseract tessdata_best](https://github.com/tesseract-ocr/tessdata_best) 4.1.0, Arabisch | `assets/tessdata/` | Apache 2.0 (siehe `Code/Android/LIZENZEN/Tesseract-models-Apache-2.0.txt`) |
 | [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) PP-OCRv3, ONNX-Fassung von [monkt/paddleocr-onnx](https://huggingface.co/monkt/paddleocr-onnx) | `assets/paddle/` | Apache 2.0 |
 | Schrift [Aref Ruqaa](https://github.com/alif-type/aref-ruqaa) | `res/font/` | SIL Open Font License 1.1 (siehe `Code/Android/LIZENZEN/ArefRuqaa-OFL.txt`) |
 | Hindawi-Metadaten aus [The Arabic E-Book Corpus](https://researchdata.se/en/catalogue/dataset/2024-145/1) (Andreas Hallberg, Universität Göteborg) | `assets/hindawi-catalog.json` | CC BY 4.0 |
@@ -27,7 +27,7 @@ Die [PolyForm-Noncommercial-Lizenz](LICENSE) dieses Repositorys gilt nur für de
 | [AndroidSVG](https://github.com/BigBadaboom/androidsvg) 1.4 | Apache 2.0 |
 | Google ML Kit Text Recognition, Google Code Scanner (Play Services) | [Google APIs Terms of Service](https://developers.google.com/terms) und [ML Kit Terms](https://developers.google.com/ml-kit/terms) |
 | JUnit 4 (nur Tests) | EPL 1.0 |
-| org.json (nur Tests) | Public Domain / JSON License |
+| org.json 20240303 (nur Tests) | Public Domain |
 
 ## Online-Dienste (werden zur Laufzeit abgefragt, nichts davon ist mitgeliefert)
 

@@ -9,11 +9,13 @@ Warraq ist eine Android-App für die eigene Büchersammlung, gebaut für Leute, 
 <img src="docs/screenshots/lesehilfe-de.png" width="200" alt="Lesehilfe in den Buchdetails">
 </p>
 
-**[APK herunterladen](https://github.com/momosadf58-web/Warraq/releases/latest)** · Android 8.0 oder neuer · [English below](#english)
+**[APK herunterladen](https://github.com/momosadf58-web/Warraq/releases/latest)** · Android 8.0 oder neuer, 64-Bit-ARM · [English below](#english)
+
+Die Buchcover in den Screenshots sind absichtlich verpixelt.
 
 ## Warum es die App gibt
 
-Die meisten Bibliotheks-Apps finden arabische Titel schlecht, verwechseln Ausgaben oder kommen mit Schrift von rechts nach links nicht zurecht. Warraq ist von Anfang an zweisprachig gebaut. Die Oberfläche gibt es auf Deutsch und Arabisch, die Texterkennung liest arabische Cover direkt auf dem Gerät, und für arabische Bücher sucht die App zusätzlich im Katalog der Hindawi-Stiftung und beim Verlag Alrewaq.
+Warraq ist von Anfang an zweisprachig gebaut. Die Oberfläche gibt es auf Deutsch und Arabisch, die Texterkennung liest arabische Cover direkt auf dem Gerät, und für arabische Bücher sucht die App zusätzlich im Katalog der Hindawi-Stiftung und beim Verlag Alrewaq.
 
 Ein Konto braucht man nicht. Die Bibliothek liegt als `library.json` mit den Coverbildern auf dem Handy und lässt sich als ZIP sichern.
 
@@ -35,7 +37,7 @@ Optional gibt es den KI-Helfer Allam (علام). Er macht Lesetipps, beantwortet
 2. Die Datei auf dem Handy öffnen. Android fragt einmal nach der Erlaubnis, Apps aus dieser Quelle zu installieren.
 3. Die App fragt beim ersten Scannen nach der Kamera. Internet braucht sie nur für die Buchsuche.
 
-Warraq ist nicht im Play Store. Die SHA-256-Prüfsumme der APK steht in den Release-Notizen.
+Die APK läuft nur auf Geräten mit 64-Bit-ARM-Prozessor (`arm64-v8a`), das sind praktisch alle Handys der letzten Jahre. Warraq ist nicht im Play Store. Die SHA-256-Prüfsumme der APK steht in den Release-Notizen.
 
 ## Selbst bauen
 
@@ -61,7 +63,7 @@ Code/Android/app/src/main/
     ui/     Bildschirme: Bibliothek, Hinzufügen, Kamera, Details, Statistik, 3D-Raum, Profil
   assets/
     room/        3D-Buchladen (HTML, JavaScript, Three.js)
-    tessdata/    Tesseract-Modelle für Arabisch, Deutsch, Englisch
+    tessdata/    Tesseract-Modell für Arabisch
     paddle/      PaddleOCR-Modelle für Arabisch (ONNX)
     hindawi-*.json   Metadaten und Beschreibungen arabischer Bücher
 ```
@@ -70,7 +72,7 @@ Arabische Cover liest die App mit PaddleOCR und Tesseract als Rückfall, lateini
 
 ## Daten und Privatsphäre
 
-Es gibt keine Anmeldung, keine Werbung und kein Tracking. Bei einer Suche geht nur der Suchbegriff an die genannten Kataloge. Der KI-Schlüssel liegt im geschützten App-Speicher und wird nicht mitgesichert.
+Es gibt keine Anmeldung, keine Werbung und kein Tracking. Bei einer Suche geht nur der Suchbegriff an die genannten Kataloge. Wer Allam einschaltet, schickt für die jeweilige Anfrage Titel, Autoren, Lesestatus und Bewertungen der betroffenen Bücher an Ollama. Profildaten gehen nicht mit. Der KI-Schlüssel liegt im geschützten App-Speicher und wird nicht mitgesichert.
 
 ## Lizenz
 
