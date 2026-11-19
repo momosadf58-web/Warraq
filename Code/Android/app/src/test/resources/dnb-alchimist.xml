@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/"><version>1.1</version><numberOfRecords>28</numberOfRecords><records><record><recordSchema>oai_dc</recordSchema><recordPacking>xml</recordPacking><recordData><dc xmlns:dnb="http://d-nb.de/standards/dnbterms" xmlns="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <dc:title>[Coelho] ; Der Alchimist : Roman / Paulo Coelho ; aus dm brasilianischen Portugiesisch von Cordula Swoboda Herzog und Maralde Meyer-Minnemann</dc:title>
+  <dc:creator>Coelho, Paulo [Verfasser]</dc:creator>
+  <dc:creator>Herzog, Cordula Svoboda [Übersetzer]</dc:creator>
+  <dc:publisher>Zürich : Diogenes</dc:publisher>
+  <dc:date>2026</dc:date>
+  <dc:language>ger</dc:language>
+  <dc:identifier xmlns:tel="http://krait.kb.nl/coop/tel/handbook/telterms.html" xsi:type="tel:ISBN">978-3-257-24830-2 Broschur : circa EUR 12.00 (DE), circa EUR 12.40 (AT), circa CHF 16.00 (freier Preis)</dc:identifier>
+  <dc:identifier xmlns:tel="http://krait.kb.nl/coop/tel/handbook/telterms.html" xsi:type="tel:ISBN">3-257-24830-X</dc:identifier>
+  <dc:identifier xsi:type="dnb:IDN">1378829549</dc:identifier>
+  <dc:subject>860 Spanische und portugiesische Literatur</dc:subject>
+  <dc:subject>B Belletristik</dc:subject>
+  <dc:format>173 Seiten</dc:format>
+</dc></recordData><recordPosition>1</recordPosition></record><record><recordSchema>oai_dc</recordSchema><recordPacking>xml</recordPacking><recordData><dc xmlns:dnb="http://d-nb.de/standards/dnbterms" xmlns="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <dc:title>[Coelho] ; Der Alchimist : Roman / Paulo Coelho ; mit Zeichnungen von Christoph Niemann ; aus dem Brasilianischen von Cordula Swoboda Herzog und Maralde Meyer-Minnemann</dc:title>
+  <dc:creator>Coelho, Paulo [Verfasser]</dc:creator>
+  <dc:creator>Herzog, Cordula Svoboda [Übersetzer]</dc:creator>
+  <dc:creator>Meyer-Minnemann, Maralde [Übersetzer]</dc:creator>
+  <dc:creator>Niemann, Christoph [Illustrator]</dc:creator>
+  <dc:publisher>Zürich : Diogenes</dc:publisher>
+  <dc:date>2023</dc:date>
+  <dc:language>ger</dc:language>
+  <dc:identifier xmlns:tel="http://krait.kb.nl/coop/tel/handbook/telterms.html" xsi:type="tel:ISBN">978-3-257-07272-3 Festeinband : circa EUR 20.00 (DE), circa EUR 20.60 (AT), circa CHF 27.00 (freier Preis)</dc:identifier>
+  <dc:identifier xmlns:tel="http://krait.kb.nl/coop/tel/handbook/telterms.html" xsi:type="tel:ISBN">3-257-07272-4</dc:identifier>
+  <dc:identifier xsi:type="dnb:IDN">1297752740</dc:identifier>
+  <dc:subject>860 Spanische und portugiesische Literatur</dc:subject>
+  <dc:subject>B Belletristik</dc:subject>
+  <dc:format>217 Seiten</dc:format>
+</dc></recordData><recordPosition>2</recordPosition></record><record><recordSchema>oai_dc</recordSchema><recordPacking>xml</recordPacking><recordData><dc xmlns:dnb="http://d-nb.de/standards/dnbterms" xmlns="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <dc:title>[Coelho] ; Der Alchimist : Roman / Paulo Coelho ; aus dem Brasilianischen von Cordula Swoboda Herzog</dc:title>
+  <dc:creator>Coelho, Paulo [Verfasser]</dc:creator>
+  <dc:creator>Herzog, Cordula Svoboda [Übersetzer]</dc:creator>
+  <dc:publisher>Zürich : Diogenes</dc:publisher>
+  <dc:date>2021</dc:date>
+  <dc:language>ger</dc:language>
+  <dc:identifier xmlns:tel="http://krait.kb.nl/coop/tel/handbook/telterms.html" xsi:type="tel:ISBN">978-3-257-07155-9 Gewebe : circa EUR 18.00 (DE), circa EUR 18.50 (AT), circa CHF 24.00 (freier Preis)</dc:identifier>
+  <dc:identifier xmlns:tel="http://krait.kb.nl/coop/tel/handbook/telterms.html" xsi:type="tel:ISBN">3-257-07155-8</dc:identifier>
+  <dc:identifier xsi:type="dnb:IDN">1220372668</dc:identifier>
+  <dc:subject>860 Spanische und portugiesische Literatur</dc:subject>
+  <dc:subject>B Belletristik</dc:subject>
+  <dc:format>172 Seiten</dc:format>
+</dc></recordData><recordPosition>3</recordPosition></record></records><nextRecordPosition>4</nextRecordPosition><echoedSearchRetrieveRequest><version>1.1</version><query>tit=Der Alchimist and per=Coelho</query><xQuery xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true"/><maximumRecords>3</maximumRecords><recordSchema>oai_dc</recordSchema></echoedSearchRetrieveRequest></searchRetrieveResponse>

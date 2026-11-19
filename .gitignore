@@ -1,0 +1,42 @@
+# Nur lokal: fertige APKs (stehen unter GitHub Releases), Sicherungen echter Bibliotheken,
+# Prüfnachweise vom eigenen Handy, Verlauf und Werkzeuge mit lokalen Pfaden
+Ausgaben/
+Sicherungen/
+Pruefnachweise/
+Historie/
+Werkzeuge/
+Quellen/
+
+# Interne Übergabe- und Vault-Notizen (bleiben im AI-Brain-Vault)
+00 Index.md
+Start.md
+Stand.md
+Projektverlauf.md
+Übergabe.md
+Codex-Übergabe.md
+Claude-Übergabe-*.md
+Claude-Start.txt
+Dateimanifest.json
+Metadaten- und Cover-Import – Plan.md
+Anforderungen.md
+Technik und Quellen.md
+
+# Android-Build
+Code/Android/local.properties
+Code/Android/.gradle/
+Code/Android/.kotlin/
+Code/Android/.idea/
+**/build/
+*.apk
+*.aab
+*.idsig
+
+# Geheimnisse niemals hochladen
+*.jks
+*.keystore
+keystore.properties
+*.env
+.env
+
+# Office-Sperrdateien
+~$*

@@ -1,0 +1,25 @@
+{
+    "source":  "https://huggingface.co/monkt/paddleocr-onnx",
+    "revision":  "7b02d0a30a07ba2b92ad1ff5a8941ae2c633de65",
+    "origin":  "PaddleOCR PP-OCRv3 (https://github.com/PaddlePaddle/PaddleOCR)",
+    "license":  "Apache-2.0",
+    "files":  [
+                  {
+                      "file":  "det.onnx",
+                      "from":  "detection/v3/det.onnx",
+                      "model":  "PP-OCRv3_mobile_det",
+                      "sha256":  "ee40e80071ba3a320d4efda75f3e22047a7d049e9bf7bcaaf9daea23fc21b935"
+                  },
+                  {
+                      "file":  "arabic_rec.onnx",
+                      "from":  "languages/arabic/rec.onnx",
+                      "model":  "arabic_PP-OCRv3_mobile_rec",
+                      "sha256":  "7982d371612785238fd99080cff36354deaec84fdc6ff7da9c82af4243fa0c9a"
+                  },
+                  {
+                      "file":  "arabic_dict.txt",
+                      "from":  "languages/arabic/dict.txt",
+                      "sha256":  "637c27c88512c22089bef927b34ada08f748dc132ac70facd68d8202384c2726"
+                  }
+              ]
+}

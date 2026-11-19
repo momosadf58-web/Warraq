@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="paper">#F4EFE6</color>
+    <color name="night">#121413</color>
+    <color name="olive">#3E5A3E</color>
+    <style name="Theme.Bookie" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/paper</item>
+    </style>
+</resources>
