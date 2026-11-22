@@ -1,6 +1,6 @@
 # Warraq – Regeln für KI-Agenten (Codex, Claude und andere)
 
-Android-App „Warraq / الورّاق“, Paket `de.mo.bibliothek`, aktuell Version 3.5.0 (versionCode 22). Persönliche Bibliothek auf Deutsch und Arabisch. Was die App kann, steht in `README.md`.
+Android-App „Warraq / الورّاق“, Paket `de.mo.bibliothek`, aktuell Version 3.5.1 (versionCode 23). Persönliche Bibliothek auf Deutsch und Arabisch. Was die App kann, steht in `README.md`.
 
 ## Einstieg
 

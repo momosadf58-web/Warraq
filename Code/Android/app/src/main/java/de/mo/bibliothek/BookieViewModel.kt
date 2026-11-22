@@ -78,24 +78,13 @@ class BookieViewModel(application: Application) : AndroidViewModel(application) 
             loaded.onSuccess { _books.value = it }
                 .onFailure { _message.value = "Die Bibliothek konnte nicht gelesen werden. Es wurde nichts verändert." }
             _loaded.value = loaded.isSuccess
-            if (loaded.isSuccess) {
-                checkAuditDue()
-                collectWidgetQuotes()
-            }
+            if (loaded.isSuccess) checkAuditDue()
         }
-    }
-
-    // ---- Zitat-Widget: privater Vorrat belegter DE/AR-Zitate, keine KI ----
-    private val quoteStore = de.mo.bibliothek.data.QuoteStore(application)
-
-    /** Bei aktivem Widget pro App-Start wenige noch nicht geprüfte Bücher online nach Zitaten durchsuchen. */
-    private fun collectWidgetQuotes() = viewModelScope.launch(Dispatchers.IO) {
-        val app = getApplication<Application>()
-        runCatching { if (quoteStore.prune(_books.value)) de.mo.bibliothek.widget.QuoteWidget.updateAll(app) }
-        if (de.mo.bibliothek.widget.QuoteWidget.ids(app).isEmpty()) return@launch
-        val month = 30L * 24 * 60 * 60 * 1000
-        val now = System.currentTimeMillis()
-        _books.value.filter { now - quoteStore.checkedAt(it.id) > month }.shuffled().take(6).forEach { fetchKnowledge(it) }
+        // Reste des entfernten Zitat-Widgets (3.5.0) einmalig löschen; Bibliothek und Cover bleiben unberührt.
+        runCatching {
+            java.io.File(application.filesDir, "widget-quotes.json").delete()
+            application.deleteSharedPreferences("widget")
+        }
     }
 
     // ---- Allam räumt auf: lokale Prüfung, ändert nichts ----
@@ -378,12 +367,7 @@ class BookieViewModel(application: Application) : AndroidViewModel(application) 
     suspend fun fetchKnowledge(book: Book): Result<BookKnowledge> = withContext(Dispatchers.IO) {
         val key = "${book.id}|${book.title}|${book.author}|${book.isbn}"
         knowledgeCache[key]?.let { return@withContext Result.success(it) }
-        runCatching { KnowledgeLookup.fetch(book) }.onSuccess {
-            knowledgeCache[key] = it
-            runCatching {
-                if (quoteStore.record(book, it)) de.mo.bibliothek.widget.QuoteWidget.updateAll(getApplication())
-            }
-        }
+        runCatching { KnowledgeLookup.fetch(book) }.onSuccess { knowledgeCache[key] = it }
     }
     suspend fun importCover(uri: Uri): String? = withContext(Dispatchers.IO) { runCatching { repository.importCover(uri) }.getOrNull() }
     suspend fun downloadCover(url: String): String? = withContext(Dispatchers.IO) { runCatching { repository.downloadCover(url) }.getOrNull() }

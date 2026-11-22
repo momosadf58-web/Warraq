@@ -29,15 +29,13 @@ Im 3D-Buchladen stehen die gelesenen Bücher mit ihrem echten Cover zwischen ano
 
 In den Buchdetails stehen eine kurze Beschreibung und, wenn vorhanden, Zitate aus Wikiquote mit Link zur Quelle. Beides lässt sich als Bildkarte teilen.
 
-Das Startbildschirm-Widget „Warraq · Zitat“ zeigt belegte deutsche und arabische Wikiquote-Zitate aus der eigenen Bibliothek. Es wechselt etwa alle drei Stunden und beim Antippen; ein Tipp auf den Buchtitel öffnet das Buch. Der Zitatvorrat wächst, wenn Bücher geöffnet werden, und bei aktivem Widget prüft die App beim Start einige weitere Bücher. Es werden keine KI-Sätze angezeigt.
-
 Allam räumt auf: Bei neu hinzugefügten Büchern zeigt eine Karte in den Details, welche Angaben fehlen (ISBN, Cover, Jahr, Verlag, Sprache, Seiten), und führt zum Ergänzen-Dialog. Übernommen wird nur, was man auswählt. Einmal pro Woche erscheint oben in der Bibliothek ein Aufräumbericht mit Lücken, möglichen Dubletten und fehlenden Coverdateien. Der Bericht läuft lokal, ändert nichts und führt nichts zusammen.
 
 Optional gibt es den KI-Helfer Allam (علام). Er macht Lesetipps, beantwortet Fragen zur eigenen Sammlung und schreibt eine Kurzbeschreibung aus den vorhandenen Quellen. Erstelle dafür einen [Gemini-API-Schlüssel](https://aistudio.google.com/apikey) und speichere ihn unter **Profil & Einstellungen → Allam, KI-Buchhändler → Gemini-API-Schlüssel**. Zum Löschen das Feld leer lassen und speichern. Ohne Schlüssel bleibt Allam aus und der Rest funktioniert normal. Was Allam schreibt, ist als KI-Text markiert. Er erfindet keine Zitate und ändert keine Buchdaten.
 
 ## Installieren
 
-1. Unter [Releases](https://github.com/momosadf58-web/Warraq/releases/latest) die Datei `Warraq-3.5.0.apk` laden.
+1. Unter [Releases](https://github.com/momosadf58-web/Warraq/releases/latest) die Datei `Warraq-3.5.1.apk` laden.
 2. Die Datei auf dem Handy öffnen. Android fragt einmal nach der Erlaubnis, Apps aus dieser Quelle zu installieren.
 3. Die App fragt beim ersten Scannen nach der Kamera. Internet braucht sie nur für die Buchsuche.
 

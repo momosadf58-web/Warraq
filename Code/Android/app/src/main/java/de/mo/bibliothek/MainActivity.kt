@@ -108,13 +108,9 @@ class MainActivity : ComponentActivity() {
     /** Über „Teilen“ empfangenes Coverfoto; wird nur zur Erkennung gelesen. */
     private val sharedImage = kotlinx.coroutines.flow.MutableStateFlow<Uri?>(null)
 
-    /** Buch-ID aus dem Zitat-Widget; wird nach dem Laden der Bibliothek geöffnet. */
-    private val openBook = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
-
     private fun takeShared(intent: android.content.Intent?) {
         if (intent?.action == android.content.Intent.ACTION_SEND && intent.type?.startsWith("image/") == true)
             sharedImage.value = androidx.core.content.IntentCompat.getParcelableExtra(intent, android.content.Intent.EXTRA_STREAM, Uri::class.java)
-        intent?.getStringExtra(de.mo.bibliothek.widget.QuoteWidget.EXTRA_BOOK)?.let { openBook.value = it }
     }
 
     override fun onNewIntent(intent: android.content.Intent) {
@@ -150,7 +146,7 @@ class MainActivity : ComponentActivity() {
                             insets.isAppearanceLightNavigationBars = !darkTheme
                         }
                     }
-                    App(model, sharedImage, openBook)
+                    App(model, sharedImage)
                 }
             }
         }
@@ -174,7 +170,7 @@ private sealed interface Layer {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun App(model: BookieViewModel, sharedImage: kotlinx.coroutines.flow.MutableStateFlow<Uri?>, openBook: kotlinx.coroutines.flow.MutableStateFlow<String?>) {
+private fun App(model: BookieViewModel, sharedImage: kotlinx.coroutines.flow.MutableStateFlow<Uri?>) {
     val books by model.books.collectAsStateWithLifecycle()
     val settings by model.settings.collectAsStateWithLifecycle()
     val message by model.message.collectAsStateWithLifecycle()
@@ -196,16 +192,6 @@ private fun App(model: BookieViewModel, sharedImage: kotlinx.coroutines.flow.Mut
     val shared by sharedImage.collectAsStateWithLifecycle()
     LaunchedEffect(shared) {
         shared?.let { layers = layers + Layer.Recognition(it); sharedImage.value = null }
-    }
-
-    val requestedBook by openBook.collectAsStateWithLifecycle()
-    LaunchedEffect(requestedBook, books) {
-        val id = requestedBook ?: return@LaunchedEffect
-        if (books.any { it.id == id }) {
-            tab = Tab.LIBRARY
-            layers = listOf(Layer.Detail(id))
-            openBook.value = null
-        }
     }
 
     LaunchedEffect(message) {
