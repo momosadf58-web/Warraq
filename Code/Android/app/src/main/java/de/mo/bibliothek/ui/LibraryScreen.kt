@@ -78,10 +78,8 @@ import de.mo.bibliothek.SortMode
 import de.mo.bibliothek.ViewMode
 import de.mo.bibliothek.data.Book
 import de.mo.bibliothek.data.ReadStatus
-import de.mo.bibliothek.data.isArabic
-import de.mo.bibliothek.data.isGerman
-import de.mo.bibliothek.data.searchKey
 import de.mo.bibliothek.data.oracleCandidates
+import de.mo.bibliothek.data.selectLibraryBooks
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.togetherWith
@@ -127,16 +125,10 @@ fun LibraryScreen(
         showOracleDialog = true
     }
 
-    val arabicCount = remember(books) { books.count { it.isArabic } }
-    val germanCount = remember(books) { books.count { it.isGerman } }
-    val counts = remember(books) { ReadStatus.entries.associateWith { s -> books.count { it.readStatus == s } } }
-    val shown = remember(books, query, filter, lang, sort) {
-        val key = searchKey(query)
+    val selection = remember(books, query, filter, lang) { selectLibraryBooks(books, query, filter, lang) }
+    val shown = remember(selection.books, sort) {
         val collator = Collator.getInstance()
-        books.withIndex()
-            .filter { (_, b) -> filter == null || b.readStatus.name == filter }
-            .filter { (_, b) -> lang == null || (lang == "ar" && b.isArabic) || (lang == "de" && b.isGerman) }
-            .filter { (_, b) -> key.isEmpty() || searchKey("${b.title} ${b.author} ${b.isbn} ${b.genre} ${b.lists.joinToString(" ")}").contains(key) }
+        selection.books.withIndex()
             .let { found ->
                 when (sort) {
                     SortMode.ADDED -> found.sortedByDescending { it.index }
@@ -175,14 +167,14 @@ fun LibraryScreen(
                 ) {
                     item {
                         FilterPill(
-                            text = tr("Alle", "الكل") + " ${books.size}",
+                            text = tr("Alle", "الكل") + " ${selection.allCount}",
                             selected = filter == null && lang == null,
                             onClick = { filter = null; lang = null }
                         )
                     }
                     items(ReadStatus.entries) { s ->
                         FilterPill(
-                            text = "${s.label()} ${counts[s] ?: 0}",
+                            text = "${s.label()} ${selection.statusCounts.getValue(s)}",
                             selected = filter == s.name,
                             onClick = { filter = if (filter == s.name) null else s.name }
                         )
@@ -198,7 +190,7 @@ fun LibraryScreen(
                     }
                     item {
                         FilterPill(
-                            text = "العربية $arabicCount",
+                            text = "العربية ${selection.arabicCount}",
                             selected = lang == "ar",
                             subtle = true,
                             onClick = { lang = if (lang == "ar") null else "ar" }
@@ -206,12 +198,22 @@ fun LibraryScreen(
                     }
                     item {
                         FilterPill(
-                            text = "Deutsch $germanCount",
+                            text = "Deutsch ${selection.germanCount}",
                             selected = lang == "de",
                             subtle = true,
                             onClick = { lang = if (lang == "de") null else "de" }
                         )
                     }
+                }
+            }
+            if (query.isNotBlank() || filter != null || lang != null) {
+                item(key = "result_count") {
+                    Text(
+                        tr("${shown.size} von ${books.size} Büchern", "${shown.size} من أصل ${books.size} كتاب"),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp),
+                    )
                 }
             }
             item(key = "gap") { Spacer(Modifier.height(8.dp)) }

@@ -157,17 +157,23 @@ class LibraryRepository(context: Context) {
 
     @Synchronized
     fun exportBackup(uri: Uri, books: List<Book>) {
+        val coverFiles = books.map { it.cover }.filter { it.isNotEmpty() }.distinct()
+            .associateWith(::coverFile).filterValues { it.isFile }
         val manifest = JSONObject().put("format", "mos-buecher").put("version", 2)
-            .put("books", JSONArray().also { array -> books.forEach { array.put(it.toJson()) } })
+            .put("books", JSONArray().also { array ->
+                books.forEach { book ->
+                    val json = book.toJson()
+                    if (book.cover !in coverFiles) json.put("cover", "")
+                    array.put(json)
+                }
+            })
         val temporary = File.createTempFile("sicherung-", ".zip", app.cacheDir)
         try {
             ZipOutputStream(FileOutputStream(temporary).buffered()).use { zip ->
                 zip.putNextEntry(ZipEntry("manifest.json"))
                 zip.write(manifest.toString().toByteArray(StandardCharsets.UTF_8))
                 zip.closeEntry()
-                books.map { it.cover }.filter { it.isNotEmpty() }.distinct().forEach { name ->
-                    val file = coverFile(name)
-                    if (!file.isFile) return@forEach
+                coverFiles.forEach { (name, file) ->
                     zip.putNextEntry(ZipEntry("covers/$name"))
                     FileInputStream(file).use { it.copyTo(zip) }
                     zip.closeEntry()

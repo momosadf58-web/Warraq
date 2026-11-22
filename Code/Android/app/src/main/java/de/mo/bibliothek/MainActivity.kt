@@ -366,7 +366,8 @@ private fun App(model: BookieViewModel, sharedImage: kotlinx.coroutines.flow.Mut
                         lensPhoto = model.lensPhoto().takeIf { layer.hashes.isNotEmpty() && it.isFile })
                 }
                 is Layer.Detail -> {
-                    val book = books.firstOrNull { it.id == layer.id }
+                    // Direkt nach dem Speichern kann der Compose-Collector noch den alten Stand haben.
+                    val book = books.firstOrNull { it.id == layer.id } ?: model.book(layer.id)
                     if (book == null) LaunchedEffect(layer) { pop() } else Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                         DetailScreen(
                             book, books.flatMap { it.lists }.distinct().sorted(), model::coverFile,
@@ -395,8 +396,12 @@ private fun App(model: BookieViewModel, sharedImage: kotlinx.coroutines.flow.Mut
                         onCoverFailed = { model.say(coverFailed) },
                         onCancel = ::pop,
                         onSave = { saved ->
-                            model.upsert(saved)
-                            layers = layers.dropLast(1).let { rest -> if (layer.isNew) rest + Layer.Detail(saved.id) else rest }
+                            model.upsert(saved) {
+                                if (layers.lastOrNull() === layer) {
+                                    val rest = layers.dropLast(1)
+                                    layers = if (layer.isNew) rest + Layer.Detail(saved.id) else rest
+                                }
+                            }
                         },
                     )
                 }

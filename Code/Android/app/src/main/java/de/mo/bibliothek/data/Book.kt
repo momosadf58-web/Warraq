@@ -117,14 +117,21 @@ data class Book(
 private val ARABIC_SCRIPT = Regex("[\\u0600-\\u06FF\\u0750-\\u077F\\u08A0-\\u08FF]")
 private val LATIN = Regex("[A-Za-zÄÖÜäöüß]")
 
-/** Arabisch: Angabe „Arabisch“ oder arabische Schrift in Titel/Autor. */
+/** Arabisch nach Sprachangabe, sonst nach der Schrift des Titels. */
 val Book.isArabic: Boolean
-    get() = language.contains("arab", true) || ARABIC_SCRIPT.containsMatchIn(title)
+    get() = when (language.trim().lowercase(Locale.ROOT)) {
+        "ar", "ara", "arabisch", "arabic", "العربية", "عربي" -> true
+        "" -> ARABIC_SCRIPT.containsMatchIn(title)
+        else -> false
+    }
 
-/** Deutsch: Angabe „Deutsch“; ohne Angabe lateinischer Titel ohne arabische Schrift (Näherung). */
+/** Deutsch nach Sprachangabe, sonst näherungsweise bei lateinischer Schrift im Titel. */
 val Book.isGerman: Boolean
-    get() = language.contains("deutsch", true) || language.equals("de", true) ||
-        (language.isBlank() && !isArabic && LATIN.containsMatchIn(title))
+    get() = when (language.trim().lowercase(Locale.ROOT)) {
+        "de", "deu", "ger", "deutsch", "german" -> true
+        "" -> !isArabic && LATIN.containsMatchIn(title)
+        else -> false
+    }
 
 /** Vergleichsschlüssel ohne Akzente, Satzzeichen und Groß-/Kleinschreibung. */
 fun searchKey(value: String): String =
@@ -138,7 +145,9 @@ fun searchKey(value: String): String =
 fun isbnKey(value: String): String = value.uppercase(Locale.ROOT).filter { it.isDigit() || it == 'X' }
 
 fun Book.sameAs(other: Book): Boolean {
-    val a = isbnKey(isbn)
-    if (a.isNotEmpty() && a == isbnKey(other.isbn)) return true
+    if (isbn.isNotBlank() && other.isbn.isNotBlank()) {
+        val key = isbnKey(isbn)
+        return key.isNotEmpty() && key == isbnKey(other.isbn)
+    }
     return searchKey(title) == searchKey(other.title) && searchKey(author) == searchKey(other.author)
 }

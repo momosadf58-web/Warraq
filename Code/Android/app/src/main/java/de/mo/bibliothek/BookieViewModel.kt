@@ -126,14 +126,19 @@ class BookieViewModel(application: Application) : AndroidViewModel(application) 
     fun say(text: String) { _message.value = text }
 
     /** Jede Änderung wird erst übernommen, wenn sie gespeichert ist. */
-    private fun commit(failure: String, change: (List<Book>) -> List<Book>) {
+    private fun commit(failure: String, onSaved: () -> Unit = {}, change: (List<Book>) -> List<Book>) {
         if (!_loaded.value) return
         viewModelScope.launch {
             writes.withLock {
                 val next = change(_books.value)
                 val saved = withContext(Dispatchers.IO) { runCatching { repository.save(next) } }
-                if (saved.isSuccess) _books.value = next else _message.value = failure
+                if (saved.isFailure) {
+                    _message.value = failure
+                    return@launch
+                }
+                _books.value = next
             }
+            onSaved()
         }
     }
 
@@ -157,12 +162,14 @@ class BookieViewModel(application: Application) : AndroidViewModel(application) 
     fun setLists(id: String, lists: List<String>) =
         commit("Listen nicht gespeichert.") { list -> list.map { if (it.id == id) it.copy(lists = lists) else it } }
 
-    fun upsert(book: Book) {
-        commit("Buch nicht gespeichert.") { list ->
+    fun upsert(book: Book, onSaved: () -> Unit) {
+        commit("Buch nicht gespeichert.", onSaved = {
+            cleanupCovers()
+            onSaved()
+        }) { list ->
             val clean = book.copy(title = book.title.trim(), author = book.author.trim())
             if (list.any { it.id == clean.id }) list.map { if (it.id == clean.id) clean else it } else list + clean
         }
-        cleanupCovers()
     }
 
     fun delete(id: String) {

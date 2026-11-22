@@ -16,8 +16,8 @@ android {
         testInstrumentationRunner = "android.test.InstrumentationTestRunner"
         minSdk = 26
         targetSdk = 35
-        versionCode = 20
-        versionName = "3.4.7"
+        versionCode = 21
+        versionName = "3.4.8"
         // Nur das S24 und vergleichbare 64-Bit-GerÃ¤te: hÃ¤lt ONNX Runtime und Tesseract klein.
         ndk { abiFilters += "arm64-v8a" }
     }
