@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Zitat-Widget im Papier-/Oliv-Stil von Warraq. textDirection=firstStrong: arabische Zitate laufen rechts. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/quote_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg"
+    android:orientation="vertical"
+    android:gravity="center_vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/quote_text"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center_vertical|start"
+        android:textDirection="firstStrong"
+        android:textAlignment="viewStart"
+        android:fontFamily="serif"
+        android:textColor="#1F2320"
+        android:textSize="15sp"
+        android:lineSpacingMultiplier="1.15"
+        android:ellipsize="end"
+        android:maxLines="6" />
+
+    <TextView
+        android:id="@+id/quote_book"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:textDirection="firstStrong"
+        android:textAlignment="viewStart"
+        android:textColor="#3E5A3E"
+        android:textStyle="bold"
+        android:textSize="13sp"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <TextView
+        android:id="@+id/quote_source"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textDirection="locale"
+        android:textAlignment="viewStart"
+        android:textColor="#8A6A43"
+        android:textSize="10sp"
+        android:maxLines="1"
+        android:ellipsize="end" />
+</LinearLayout>

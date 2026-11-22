@@ -108,9 +108,13 @@ class MainActivity : ComponentActivity() {
     /** Über „Teilen“ empfangenes Coverfoto; wird nur zur Erkennung gelesen. */
     private val sharedImage = kotlinx.coroutines.flow.MutableStateFlow<Uri?>(null)
 
+    /** Buch-ID aus dem Zitat-Widget; wird nach dem Laden der Bibliothek geöffnet. */
+    private val openBook = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
+
     private fun takeShared(intent: android.content.Intent?) {
         if (intent?.action == android.content.Intent.ACTION_SEND && intent.type?.startsWith("image/") == true)
             sharedImage.value = androidx.core.content.IntentCompat.getParcelableExtra(intent, android.content.Intent.EXTRA_STREAM, Uri::class.java)
+        intent?.getStringExtra(de.mo.bibliothek.widget.QuoteWidget.EXTRA_BOOK)?.let { openBook.value = it }
     }
 
     override fun onNewIntent(intent: android.content.Intent) {
@@ -146,7 +150,7 @@ class MainActivity : ComponentActivity() {
                             insets.isAppearanceLightNavigationBars = !darkTheme
                         }
                     }
-                    App(model, sharedImage)
+                    App(model, sharedImage, openBook)
                 }
             }
         }
@@ -165,15 +169,17 @@ private sealed interface Layer {
     data class Detail(val id: String) : Layer
     data class Edit(val book: Book, val isNew: Boolean) : Layer
     data class Enrich(val id: String) : Layer
+    data class Audit(val findings: List<de.mo.bibliothek.data.AuditFinding>) : Layer
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun App(model: BookieViewModel, sharedImage: kotlinx.coroutines.flow.MutableStateFlow<Uri?>) {
+private fun App(model: BookieViewModel, sharedImage: kotlinx.coroutines.flow.MutableStateFlow<Uri?>, openBook: kotlinx.coroutines.flow.MutableStateFlow<String?>) {
     val books by model.books.collectAsStateWithLifecycle()
     val settings by model.settings.collectAsStateWithLifecycle()
     val message by model.message.collectAsStateWithLifecycle()
     val aiEnabled by model.aiEnabled.collectAsStateWithLifecycle()
+    val auditCount by model.auditCount.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableStateOf(Tab.LIBRARY) }
     var layers by remember { mutableStateOf(listOf<Layer>()) }
     var menuFor by remember { mutableStateOf<String?>(null) }
@@ -190,6 +196,16 @@ private fun App(model: BookieViewModel, sharedImage: kotlinx.coroutines.flow.Mut
     val shared by sharedImage.collectAsStateWithLifecycle()
     LaunchedEffect(shared) {
         shared?.let { layers = layers + Layer.Recognition(it); sharedImage.value = null }
+    }
+
+    val requestedBook by openBook.collectAsStateWithLifecycle()
+    LaunchedEffect(requestedBook, books) {
+        val id = requestedBook ?: return@LaunchedEffect
+        if (books.any { it.id == id }) {
+            tab = Tab.LIBRARY
+            layers = listOf(Layer.Detail(id))
+            openBook.value = null
+        }
     }
 
     LaunchedEffect(message) {
@@ -306,6 +322,9 @@ private fun App(model: BookieViewModel, sharedImage: kotlinx.coroutines.flow.Mut
                         onAdd = { tab = Tab.ADD },
                         contentPadding = padding,
                         onAssistant = if (aiEnabled) ({ push(Layer.Assistant) }) else null,
+                        cleanup = if (auditCount > 0) de.mo.bibliothek.ui.Cleanup(auditCount,
+                            open = { val report = model.auditReport(); model.markAuditSeen(); push(Layer.Audit(report)) },
+                            dismiss = model::markAuditSeen) else null,
                     )
                     Tab.ADD -> AddScreen(addActions, padding, recentBooks = books)
                     Tab.STATS -> StatsScreen(
@@ -340,6 +359,9 @@ private fun App(model: BookieViewModel, sharedImage: kotlinx.coroutines.flow.Mut
         ) { layer ->
             when (layer) {
                 null -> Unit
+                is Layer.Audit -> Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                    de.mo.bibliothek.ui.CleanupReport(layer.findings, books, open = { push(Layer.Detail(it)) }, close = ::pop)
+                }
                 Layer.Room -> Surface(Modifier.fillMaxSize()) { BookRoom(books, settings.yearGoal, model::coverFile, { push(Layer.Detail(it)) }, ::pop) }
                 Layer.Assistant -> Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     de.mo.bibliothek.ui.AssistantScreen(books, model::coverFile, de.mo.bibliothek.ui.AssistantActions(
@@ -385,6 +407,8 @@ private fun App(model: BookieViewModel, sharedImage: kotlinx.coroutines.flow.Mut
                                 fetchKnowledge = model::fetchKnowledge,
                                 readingNotes = if (aiEnabled) model::aiReadingNotes else null,
                                 askAi = if (aiEnabled) ({ question, arabic -> model.aiAskBook(book, question, arabic) }) else null,
+                                gaps = model.newBookGaps(book),
+                                hideGaps = { model.hideGaps(book.id) },
                             ),
                         )
                     }

@@ -111,7 +111,47 @@ class DetailActions(
     /** Frage an den KI-Buchhändler; null ohne Gemini-Schlüssel. */
     val askAi: (suspend (String, Boolean) -> Result<String>)? = null,
     val readingNotes: (suspend (Book, String, List<de.mo.bibliothek.data.BookQuote>, Boolean) -> Result<de.mo.bibliothek.data.AiBookNotes>)? = null,
+    /** Fehlende Angaben eines neu hinzugefügten Buches (Allams Prüfung); leer = keine Karte. */
+    val gaps: List<de.mo.bibliothek.data.Gap> = emptyList(),
+    val hideGaps: () -> Unit = {},
 )
+
+@Composable
+fun gapLabel(gap: de.mo.bibliothek.data.Gap): String = when (gap) {
+    de.mo.bibliothek.data.Gap.ISBN -> "ISBN"
+    de.mo.bibliothek.data.Gap.COVER -> tr("Cover", "الغلاف")
+    de.mo.bibliothek.data.Gap.YEAR -> tr("Jahr", "سنة النشر")
+    de.mo.bibliothek.data.Gap.PUBLISHER -> tr("Verlag", "الناشر")
+    de.mo.bibliothek.data.Gap.LANGUAGE -> tr("Sprache", "اللغة")
+    de.mo.bibliothek.data.Gap.PAGES -> tr("Seitenzahl", "عدد الصفحات")
+}
+
+/** Allam prüft ein neues Buch: zeigt Lücken und führt zum bestehenden Ergänzen-Dialog (Übernahme nur nach Bestätigung). */
+@Composable
+private fun GapCard(gaps: List<de.mo.bibliothek.data.Gap>, enrich: () -> Unit, hide: () -> Unit) {
+    var hidden by remember { mutableStateOf(false) }
+    if (hidden) return
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text(tr("Allam hat das Buch geprüft", "علّام راجع الكتاب"), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(
+                tr("Es fehlen: ", "ينقص: ") + gaps.map { gapLabel(it) }.joinToString(", ") +
+                    tr(". Ich suche passende Angaben in den Katalogen – übernommen wird nur, was du auswählst.",
+                        ". سأبحث في الفهارس عن بيانات مناسبة، ولن يُعتمد إلا ما تختاره."),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = { hidden = true; hide() }) { Text(tr("Ausblenden", "إخفاء")) }
+                Button(onClick = enrich) { Text(tr("Ergänzen", "إكمال")) }
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -309,6 +349,7 @@ fun DetailScreen(
                 }
             }
 
+            if (actions.gaps.isNotEmpty()) GapCard(actions.gaps, actions.enrich, actions.hideGaps)
             KnowledgePanel(book, actions.fetchKnowledge, coverFile, actions.readingNotes)
             actions.askAi?.let { AskBookCard(book.id, it) }
 

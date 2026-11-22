@@ -15,6 +15,7 @@ import de.mo.bibliothek.data.GeminiException
 import de.mo.bibliothek.data.LibraryRepository
 import de.mo.bibliothek.data.ReadStatus
 import de.mo.bibliothek.data.sameAs
+import de.mo.bibliothek.data.gaps
 import de.mo.bibliothek.data.searchKey
 import de.mo.bibliothek.data.WarraqAi
 import kotlinx.coroutines.Dispatchers
@@ -77,7 +78,57 @@ class BookieViewModel(application: Application) : AndroidViewModel(application) 
             loaded.onSuccess { _books.value = it }
                 .onFailure { _message.value = "Die Bibliothek konnte nicht gelesen werden. Es wurde nichts verändert." }
             _loaded.value = loaded.isSuccess
+            if (loaded.isSuccess) {
+                checkAuditDue()
+                collectWidgetQuotes()
+            }
         }
+    }
+
+    // ---- Zitat-Widget: privater Vorrat belegter DE/AR-Zitate, keine KI ----
+    private val quoteStore = de.mo.bibliothek.data.QuoteStore(application)
+
+    /** Bei aktivem Widget pro App-Start wenige noch nicht geprüfte Bücher online nach Zitaten durchsuchen. */
+    private fun collectWidgetQuotes() = viewModelScope.launch(Dispatchers.IO) {
+        val app = getApplication<Application>()
+        runCatching { if (quoteStore.prune(_books.value)) de.mo.bibliothek.widget.QuoteWidget.updateAll(app) }
+        if (de.mo.bibliothek.widget.QuoteWidget.ids(app).isEmpty()) return@launch
+        val month = 30L * 24 * 60 * 60 * 1000
+        val now = System.currentTimeMillis()
+        _books.value.filter { now - quoteStore.checkedAt(it.id) > month }.shuffled().take(6).forEach { fetchKnowledge(it) }
+    }
+
+    // ---- Allam räumt auf: lokale Prüfung, ändert nichts ----
+    private val week = 7L * 24 * 60 * 60 * 1000
+    private val _auditCount = MutableStateFlow(0)
+    /** Anzahl Hinweise des fälligen Wochenberichts; 0 = keine Karte zeigen. */
+    val auditCount: StateFlow<Int> = _auditCount.asStateFlow()
+
+    private fun coverExists(name: String) = repository.coverFile(name).isFile
+
+    private fun checkAuditDue() {
+        if (System.currentTimeMillis() - prefs.getLong("auditSeenAt", 0L) < week) return
+        _auditCount.value = auditReport().size
+    }
+
+    fun auditReport(): List<de.mo.bibliothek.data.AuditFinding> = de.mo.bibliothek.data.auditLibrary(_books.value, ::coverExists)
+
+    /** Bericht geöffnet oder weggeklickt: nächste Karte in einer Woche. */
+    fun markAuditSeen() {
+        prefs.edit().putLong("auditSeenAt", System.currentTimeMillis()).apply()
+        _auditCount.value = 0
+    }
+
+    /** Lücken eines neuen Buches (bis 14 Tage nach dem Hinzufügen), sofern der Hinweis nicht ausgeblendet wurde. */
+    fun newBookGaps(book: Book): List<de.mo.bibliothek.data.Gap> {
+        val fresh = book.addedAt > 0 && System.currentTimeMillis() - book.addedAt < 2 * week
+        if (!fresh || book.id in (prefs.getStringSet("gapsHidden", emptySet()) ?: emptySet())) return emptyList()
+        return book.gaps(::coverExists)
+    }
+
+    fun hideGaps(id: String) {
+        val hidden = (prefs.getStringSet("gapsHidden", emptySet()) ?: emptySet()) + id
+        prefs.edit().putStringSet("gapsHidden", hidden).apply()
     }
 
     // Schlüssel nur im nicht gesicherten App-Bereich: nie in library.json, ZIP-Export oder Android-Backup.
@@ -327,7 +378,12 @@ class BookieViewModel(application: Application) : AndroidViewModel(application) 
     suspend fun fetchKnowledge(book: Book): Result<BookKnowledge> = withContext(Dispatchers.IO) {
         val key = "${book.id}|${book.title}|${book.author}|${book.isbn}"
         knowledgeCache[key]?.let { return@withContext Result.success(it) }
-        runCatching { KnowledgeLookup.fetch(book) }.onSuccess { knowledgeCache[key] = it }
+        runCatching { KnowledgeLookup.fetch(book) }.onSuccess {
+            knowledgeCache[key] = it
+            runCatching {
+                if (quoteStore.record(book, it)) de.mo.bibliothek.widget.QuoteWidget.updateAll(getApplication())
+            }
+        }
     }
     suspend fun importCover(uri: Uri): String? = withContext(Dispatchers.IO) { runCatching { repository.importCover(uri) }.getOrNull() }
     suspend fun downloadCover(url: String): String? = withContext(Dispatchers.IO) { runCatching { repository.downloadCover(url) }.getOrNull() }

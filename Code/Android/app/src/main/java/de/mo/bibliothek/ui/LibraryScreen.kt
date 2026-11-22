@@ -96,6 +96,9 @@ class BookActions(
     val coverFile: (String) -> File,
 )
 
+/** Fälliger Wochenbericht für die Bibliothekskarte. */
+class Cleanup(val count: Int, val open: () -> Unit, val dismiss: () -> Unit)
+
 @Composable
 fun LibraryScreen(
     books: List<Book>,
@@ -107,6 +110,7 @@ fun LibraryScreen(
     onAdd: () -> Unit,
     contentPadding: PaddingValues,
     onAssistant: (() -> Unit)? = null,
+    cleanup: Cleanup? = null,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var filter by rememberSaveable { mutableStateOf<String?>(null) } // null = alle, sonst ReadStatus.name
@@ -216,6 +220,7 @@ fun LibraryScreen(
                     )
                 }
             }
+            if (cleanup != null) item(key = "cleanup") { CleanupCard(cleanup.count, cleanup.open, cleanup.dismiss) }
             item(key = "gap") { Spacer(Modifier.height(8.dp)) }
 
             when {
