@@ -16,7 +16,8 @@ data class StoredQuote(val bookId: String, val title: String, val author: String
 class QuoteStore(context: Context) {
     private val file = AtomicFile(File(context.filesDir, "widget-quotes.json"))
 
-    @Synchronized fun quotes(): List<StoredQuote> = read().quotes
+    /** Auch ältere Einträge werden beim Lesen gefiltert, damit gespeicherte Quellenangaben nie im Widget landen. */
+    @Synchronized fun quotes(): List<StoredQuote> = read().quotes.filterNot { KnowledgeLookup.isCitation(it.text) }
 
     @Synchronized fun checkedAt(bookId: String): Long = read().checked[bookId] ?: 0L
 

@@ -181,6 +181,11 @@ object KnowledgeLookup {
         }.getOrDefault(emptyList())
     }
 
+    /** Quellenangaben (Ausgabe, Übersetzer, Ort/Jahr, Seite) sind keine Zitate. */
+    private val CITATION = Regex("(?i)(übertragen von|übersetzt von|übers\\.|hrsg\\.|herausgegeben von|translated by|edited by|\\b(S\\.|Seite|p\\.|pp\\.|Bd\\.|Band|Kapitel|chapter)\\s*[0-9IVX]|\\b(Berlin|München|Leipzig|Frankfurt|Wien|Zürich|Stuttgart|Hamburg|London|New York|Paris)[ ,]+[0-9]{4}|ترجمة|ص\\.\\s*[0-9])")
+
+    internal fun isCitation(text: String): Boolean = CITATION.containsMatchIn(text)
+
     internal fun parseQuotes(html: String, source: WebSource): List<BookQuote> {
         // Stop before discussion, external links, or quotations ABOUT the work.
         val clean = html.replace(Regex("(?is)<table\\b.*?</table>"), "")
@@ -192,7 +197,7 @@ object KnowledgeLookup {
             val textPart = raw.substringBefore("<ul").substringBefore("<dl")
                 .replace(Regex("(?is)<sup.*?</sup>"), "")
             val text = Html.fromHtml(textPart, Html.FROM_HTML_MODE_LEGACY).toString().trim().replace(Regex("\\s+"), " ")
-            if(text.length !in 35..700 || text.startsWith("ISBN") || text.contains("http")) null else BookQuote(text, source)
+            if(text.length !in 35..700 || text.startsWith("ISBN") || text.contains("http") || isCitation(text)) null else BookQuote(text, source)
         }.distinctBy { it.text }.take(3).toList()
     }
 

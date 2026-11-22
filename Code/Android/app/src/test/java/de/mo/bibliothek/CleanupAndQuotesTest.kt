@@ -60,6 +60,13 @@ class CleanupAndQuotesTest {
         assertEquals("Sofies Welt", quotes.first().title)
     }
 
+    @Test fun citationsAreNotQuotes() {
+        assertTrue(de.mo.bibliothek.data.KnowledgeLookup.isCitation("Der Hexenhammer, zum ersten Male ins Deutsche übertragen von J.W.R. Schmidt, Erster Teil, Berlin 1906, S. 99"))
+        assertTrue(de.mo.bibliothek.data.KnowledgeLookup.isCitation("Haben oder Sein, dtv, München 1979, Seite 12"))
+        assertTrue(!de.mo.bibliothek.data.KnowledgeLookup.isCitation("Also schlecht ist das Weib von Natur, da es schneller am Glauben zweifelt."))
+        assertTrue(!de.mo.bibliothek.data.KnowledgeLookup.isCitation("Man sieht nur mit dem Herzen gut. Das Wesentliche ist für die Augen unsichtbar."))
+    }
+
     @Test fun pickAvoidsRepeatingTheLastQuote() {
         assertNull(pickQuote(emptyList(), null))
         val a = StoredQuote("1", "T", "A", "eins", "Wikiquote · DE", "u")
