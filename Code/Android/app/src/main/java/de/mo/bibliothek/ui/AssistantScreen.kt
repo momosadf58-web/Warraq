@@ -33,7 +33,7 @@ class AssistantActions(
 
 private enum class Part { ORACLE, TIPS, ASK, GENRES, YEAR }
 
-/** KI-Funktionen über Ollama; alles Erzeugte ist als KI-Text markiert und nie eine Faktenquelle. */
+/** Alles Erzeugte ist als KI-Text markiert und nie eine Faktenquelle. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AssistantScreen(books: List<Book>, coverFile: (String) -> File, actions: AssistantActions) {
@@ -42,6 +42,7 @@ fun AssistantScreen(books: List<Book>, coverFile: (String) -> File, actions: Ass
     var input by remember(part) { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
     var error by remember(part) { mutableStateOf<String?>(null) }
+    var failure by remember(part) { mutableStateOf<Throwable?>(null) }
     var pick by remember { mutableStateOf<AiPick?>(null) }
     var tips by remember { mutableStateOf<List<AiTip>>(emptyList()) }
     var answer by remember { mutableStateOf<AiAnswer?>(null) }
@@ -50,15 +51,15 @@ fun AssistantScreen(books: List<Book>, coverFile: (String) -> File, actions: Ass
     var review by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     val year = remember { Calendar.getInstance().get(Calendar.YEAR) }
-    val failText = tr("Keine Antwort. Netz und Ollama-Schlüssel prüfen.", "لا رد. تحقق من الشبكة ومفتاح Ollama.")
+    val failText = aiNoReply()
     val noUnread = tr("Keine ungelesenen Bücher gefunden.", "لا توجد كتب غير مقروءة.")
     val noGenres = tr("Keine Vorschläge: alle Bücher haben schon ein Genre oder sind unbekannt.", "لا اقتراحات.")
 
     fun <T> run(call: suspend () -> Result<T>, done: (T) -> Unit) {
         if (loading) return
-        loading = true; error = null
+        loading = true; error = null; failure = null
         scope.launch {
-            call().onSuccess(done).onFailure { error = it.message?.takeIf { m -> m.contains("Schlüssel") } ?: failText }
+            call().onSuccess(done).onFailure { failure = it }
             loading = false
         }
     }
@@ -111,7 +112,8 @@ fun AssistantScreen(books: List<Book>, coverFile: (String) -> File, actions: Ass
                 Part.YEAR -> tr("Rückblick $year schreiben", "حصاد $year")
             }) }
             if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())
-            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            val failureText = failure?.let { geminiErrorText(it) ?: failText }
+            (error ?: failureText)?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
             when (part) {
                 Part.ORACLE -> pick?.let { p ->
@@ -166,7 +168,7 @@ fun AskBookCard(bookId: String, ask: suspend (String, Boolean) -> Result<String>
     var question by remember(bookId) { mutableStateOf("") }
     var answer by remember(bookId) { mutableStateOf("") }
     var loading by remember(bookId) { mutableStateOf(false) }
-    var failed by remember(bookId) { mutableStateOf(false) }
+    var failure by remember(bookId) { mutableStateOf<Throwable?>(null) }
     val scope = rememberCoroutineScope()
     Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
@@ -175,15 +177,31 @@ fun AskBookCard(bookId: String, ask: suspend (String, Boolean) -> Result<String>
             OutlinedTextField(question, { question = it }, Modifier.fillMaxWidth(), enabled = !loading,
                 label = { Text(tr("z. B. „Passt das Buch zu mir?“", "مثلاً: هل يناسبني هذا الكتاب؟")) }, shape = RoundedCornerShape(14.dp))
             Button(enabled = question.isNotBlank() && !loading, onClick = {
-                loading = true; failed = false
-                scope.launch { ask(question, arabic).onSuccess { answer = it }.onFailure { failed = true }; loading = false }
+                loading = true; failure = null
+                scope.launch { ask(question, arabic).onSuccess { answer = it }.onFailure { failure = it }; loading = false }
             }) { Text(tr("Fragen", "اسأل")) }
             if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())
-            if (failed) Text(tr("Keine Antwort. Netz und Ollama-Schlüssel prüfen.", "لا رد. تحقق من الشبكة ومفتاح Ollama."), color = MaterialTheme.colorScheme.error)
+            failure?.let { Text(geminiErrorText(it) ?: aiNoReply(), color = MaterialTheme.colorScheme.error) }
             AiText(answer)
         }
     }
 }
+
+@Composable
+internal fun geminiErrorText(failure: Throwable?): String? = when ((failure as? GeminiException)?.failure) {
+    GeminiFailure.KEY_REJECTED -> tr(
+        "Gemini-Schlüssel abgelehnt. Unter aistudio.google.com/apikey einen gültigen Schlüssel erzeugen und neu eintragen.",
+        "رُفض مفتاح Gemini. أنشئ مفتاحًا صالحًا على aistudio.google.com/apikey ثم أدخله من جديد.",
+    )
+    GeminiFailure.QUOTA_EXHAUSTED -> tr(
+        "Tageskontingent von Gemini erreicht, morgen wieder verfügbar.",
+        "بلغت الحدّ اليومي لاستخدام Gemini. سيكون متاحًا مجددًا غدًا.",
+    )
+    null -> null
+}
+
+@Composable
+private fun aiNoReply() = tr("Keine Antwort. Netz und Gemini-Schlüssel prüfen.", "لا رد. تحقق من الشبكة ومفتاح Gemini.")
 
 @Composable
 private fun AiText(text: String) {

@@ -31,7 +31,7 @@ fun ReadingHelp(book:Book,description:String,quotes:List<BookQuote>,source:WebSo
             Text(tr("Allam liest die Buchquellen …", "علام يقرأ المصادر …"),style=MaterialTheme.typography.bodySmall)
         }
         result?.isFailure==true -> {
-            Text(tr("Allam konnte daraus gerade keine Lesehilfe erstellen. Die Quellentexte oben bleiben verfügbar.",
+            Text(geminiErrorText(result?.exceptionOrNull()) ?: tr("Allam konnte daraus gerade keine Lesehilfe erstellen. Die Quellentexte oben bleiben verfügbar.",
                 "تعذر على علام إعداد المساعدة حالياً. تبقى نصوص المصادر أعلاه متاحة."),modifier=Modifier.padding(top=8.dp))
             TextButton(onClick={attempt++}){Text(tr("Erneut versuchen", "إعادة المحاولة"))}
         }

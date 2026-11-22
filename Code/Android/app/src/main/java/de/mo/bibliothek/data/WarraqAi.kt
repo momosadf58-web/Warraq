@@ -1,6 +1,8 @@
 package de.mo.bibliothek.data
 
+import android.util.AtomicFile
 import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
 import java.net.HttpURLConnection
@@ -13,21 +15,23 @@ data class AiAnswer(val text: String, val books: List<Book>)
 data class AiGenre(val book: Book, val genre: String)
 data class AiBookNotes(val blurb: String, val idea: String, val quote: BookQuote?, val explanation: String)
 
+internal enum class GeminiFailure { KEY_REJECTED, QUOTA_EXHAUSTED }
+
+internal class GeminiException(val failure: GeminiFailure) : IOException(failure.name)
+
 /**
- * Optionaler Helfer über Ollama Cloud (Modell „beam“, nur Text). Ohne Schlüssel bleibt alles aus.
+ * Optionaler Helfer über Gemini (nur Text). Ohne Schlüssel bleibt alles aus.
  * Je nach Funktion Titel, Autor, Genre, Sprache, Seiten, Status, Bewertung und Lesejahr;
  * bei Buchfragen/Lesehilfen auch Quellbeschreibungen und bei Erklärungen vorhandene Zitate. Keine Notizen/Fotos.
  * Fakten (ISBN, Cover, Jahr) kommen weiterhin nur aus den Katalogen.
  */
 object WarraqAi {
-    private const val URL_CHAT = "https://ollama.com/api/chat"
-    // „beam“ bevorzugt; nicht jedes Konto darf es nutzen (HTTP 403), dann das nächste Cloud-Modell.
-    private val MODELS = listOf("beam", "deepseek-v4.1-flash", "gemma4:31b", "gpt-oss:120b", "gpt-oss:20b")
-    @Volatile private var working: String? = null
-
-    @Volatile var key: String = ""
-        set(value) { field = value; working = null }
-    val enabled: Boolean get() = key.isNotBlank()
+    private const val URL_MODELS = "https://generativelanguage.googleapis.com/v1beta/models"
+    private val MODELS = listOf(
+        "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-3.6-flash",
+    )
+    @Volatile internal var geminiKeyFile: AtomicFile? = null
+    val enabled: Boolean get() = geminiKeyFile?.baseFile?.isFile == true
 
     /** Kurzzeile pro Buch; der Index ersetzt die interne ID im Prompt. */
     internal fun line(index: Int, b: Book): String = listOf(
@@ -52,37 +56,99 @@ object WarraqAi {
     internal fun clean(text: String) = text.replace(Regex("\\s*\\(#\\d+\\)"), "").replace(Regex("#\\d+\\s*"), "").trim()
 
     fun chat(prompt: String): JSONObject {
-        check(enabled) { "Kein Ollama-Schlüssel." }
-        working?.let { return chat(prompt, it) }
-        var denied: IOException? = null
-        for (model in MODELS) {
-            try { return chat(prompt, model).also { working = model } }
-            catch (e: ModelUnavailable) { denied = e }
+        val body = geminiBody(prompt).toString().toByteArray(StandardCharsets.UTF_8)
+        val file = checkNotNull(geminiKeyFile) { "Kein Gemini-Schlüssel." }
+        val key = synchronized(file) {
+            check(file.baseFile.isFile) { "Kein Gemini-Schlüssel." }
+            String(file.readFully(), StandardCharsets.UTF_8).trim()
         }
-        throw denied ?: IOException("KI nicht erreichbar.")
+        check(key.isNotBlank()) { "Kein Gemini-Schlüssel." }
+        return chatGemini { model -> requestGemini(model, key, body) }
     }
 
-    private class ModelUnavailable(message: String) : IOException(message)
+    internal fun geminiBody(prompt: String): JSONObject {
+        fun parts(text: String) = JSONArray().put(JSONObject().put("text", text))
+        return JSONObject()
+            .put("systemInstruction", JSONObject().put("parts", parts(SYSTEM)))
+            .put("contents", JSONArray().put(JSONObject().put("role", "user").put("parts", parts(prompt))))
+            .put("generationConfig", JSONObject().put("responseMimeType", "application/json").put("temperature", 0.5))
+    }
 
-    private fun chat(prompt: String, model: String): JSONObject {
-        val body = JSONObject().put("model", model).put("stream", false).put("think", false).put("format", "json")
-            .put("messages", JSONArray().put(JSONObject().put("role", "system").put("content", SYSTEM))
-                .put(JSONObject().put("role", "user").put("content", prompt)))
-        val c = URL(URL_CHAT).openConnection() as HttpURLConnection
-        c.connectTimeout = 10000; c.readTimeout = 60000; c.requestMethod = "POST"; c.doOutput = true
-        c.setRequestProperty("Content-Type", "application/json; charset=utf-8")
-        c.setRequestProperty("Authorization", "Bearer $key")
-        // Ollama weist den Android-Standard-User-Agent („Dalvik/…“) mit HTTP 403 ab, noch vor der Schlüsselprüfung.
-        c.setRequestProperty("User-Agent", LibraryRepository.USER_AGENT)
+    internal data class GeminiResponse(val status: Int, val body: String = "")
+
+    internal fun chatGemini(request: (String) -> GeminiResponse): JSONObject {
+        var rateLimited = 0
+        for (model in MODELS) {
+            val response = request(model)
+            when (response.status) {
+                200 -> if (response.body.isNotBlank()) {
+                    parseGeminiResponse(JSONObject(response.body))?.let { return it }
+                }
+                429 -> rateLimited++
+                404, 500, 503 -> Unit
+                401, 403 -> throw GeminiException(GeminiFailure.KEY_REJECTED)
+                400 -> {
+                    if (invalidApiKey(response.body)) throw GeminiException(GeminiFailure.KEY_REJECTED)
+                    throw IOException("Gemini-Anfrage fehlgeschlagen (HTTP 400).")
+                }
+                else -> throw IOException("Gemini nicht erreichbar (HTTP ${response.status}).")
+            }
+        }
+        if (rateLimited == MODELS.size) throw GeminiException(GeminiFailure.QUOTA_EXHAUSTED)
+        throw IOException("Keine nutzbare Antwort von Gemini.")
+    }
+
+    private fun invalidApiKey(body: String): Boolean {
+        val error = try {
+            JSONObject(body).optJSONObject("error")
+        } catch (_: JSONException) {
+            return false
+        } ?: return false
+        if (error.optString("status") == "API_KEY_INVALID") return true
+        val details = error.optJSONArray("details") ?: return false
+        return (0 until details.length()).any { details.optJSONObject(it)?.optString("reason") == "API_KEY_INVALID" }
+    }
+
+    internal fun parseGeminiResponse(response: JSONObject): JSONObject? {
+        val blockReason = response.optJSONObject("promptFeedback")?.optString("blockReason").orEmpty()
+        if (blockReason.isNotBlank() && blockReason != "BLOCK_REASON_UNSPECIFIED") return null
+        val candidate = response.optJSONArray("candidates")?.optJSONObject(0) ?: return null
+        when (candidate.optString("finishReason")) {
+            "", "FINISH_REASON_UNSPECIFIED", "STOP", "MAX_TOKENS" -> Unit
+            else -> return null
+        }
+        val parts = candidate.optJSONObject("content")?.optJSONArray("parts") ?: return null
+        val text = buildString {
+            for (index in 0 until parts.length()) {
+                val part = parts.optJSONObject(index) ?: continue
+                if (!part.optBoolean("thought")) append((part.opt("text") as? String).orEmpty())
+            }
+        }
+        return if (text.isBlank()) null else parseContent(text)
+    }
+
+    private fun requestGemini(model: String, key: String, body: ByteArray): GeminiResponse {
+        val c = URL("$URL_MODELS/$model:generateContent").openConnection() as HttpURLConnection
         try {
-            c.outputStream.use { it.write(body.toString().toByteArray(StandardCharsets.UTF_8)) }
-            if (c.responseCode == 401) throw IOException("Ollama-Schlüssel abgelehnt (HTTP 401). Auf ollama.com einen gültigen Schlüssel erzeugen und neu eintragen.")
-            // 403: Modell fürs Konto gesperrt; 400/404: Modell kennt eine Option nicht oder fehlt.
-            if (c.responseCode in setOf(400, 403, 404)) throw ModelUnavailable("Ollama-Schlüssel ohne Zugriff auf ein passendes Modell (HTTP ${c.responseCode}).")
-            if (c.responseCode != 200) throw IOException("KI nicht erreichbar (HTTP ${c.responseCode}).")
-            val text = c.inputStream.use { String(it.readBytes(), StandardCharsets.UTF_8) }
-            return parseContent(JSONObject(text).getJSONObject("message").optString("content"))
-        } finally { c.disconnect() }
+            c.connectTimeout = 10000
+            c.readTimeout = 60000
+            c.instanceFollowRedirects = false
+            c.requestMethod = "POST"
+            c.doOutput = true
+            c.setRequestProperty("Content-Type", "application/json")
+            c.setRequestProperty("x-goog-api-key", key)
+            c.setRequestProperty("User-Agent", LibraryRepository.USER_AGENT)
+            c.outputStream.use { it.write(body) }
+            val status = c.responseCode
+            val stream = when (status) {
+                200 -> c.inputStream
+                400 -> c.errorStream
+                else -> null
+            }
+            return GeminiResponse(status, stream?.bufferedReader(StandardCharsets.UTF_8)?.use { it.readText() }.orEmpty())
+        } finally {
+            c.disconnect()
+        }
     }
 
     internal fun parseContent(content: String): JSONObject =
@@ -151,9 +217,9 @@ object WarraqAi {
         }.distinctBy { it.book.id }
     }
 
-    fun yearReview(books: List<Book>, year: Int, goal: Int, arabic: Boolean): String {
+    fun yearReview(books: List<Book>, year: Int, arabic: Boolean): String {
         val read = booksReadInYear(books, year)
-        val o = chat("Mein Lesejahr $year, Ziel $goal Bücher, gelesen ${read.size}:\n" +
+        val o = chat("Mein Lesejahr $year, gelesen ${read.size}:\n" +
             read.mapIndexed(::line).joinToString("\n").ifBlank { "(noch keins)" } +
             "\nWeitere Bibliothek: ${books.size} Bücher, ${books.count { it.isArabic }} arabisch.\n" +
             "Schreib einen persönlichen Jahresrückblick in 4–6 Sätzen: Muster, Themen, Sprachen, Highlight, ein Gedanke fürs nächste Buch. " +

@@ -38,6 +38,6 @@ Die [PolyForm-Noncommercial-Lizenz](LICENSE) dieses Repositorys gilt nur für de
 | [Google Books API](https://developers.google.com/books) | Google APIs Terms of Service |
 | Alrewaq (arabischer Verlag), Hindawi-Coverbilder | Bilder und Texte gehören den jeweiligen Verlagen. Sie werden nur zur Anzeige im eigenen Regal abgerufen. |
 | [Wikipedia](https://www.wikipedia.org/), [Wikidata](https://www.wikidata.org/), [Wikiquote](https://www.wikiquote.org/) | Texte CC BY-SA 4.0, Wikidata CC0. Die App zeigt den Quellenlink an. |
-| [Ollama Cloud](https://ollama.com/) (optional, eigener Schlüssel) | Nutzungsbedingungen von Ollama und des jeweiligen Modells |
+| [Google Gemini API](https://aistudio.google.com/api-reference/generate-content) (optional, eigener Schlüssel) | [Nutzungsbedingungen der Gemini API](https://ai.google.dev/gemini-api/terms) |
 
 Buchcover, die die App aus diesen Diensten lädt, sind urheberrechtlich geschützt und gehören den Verlagen. Sie werden nicht mit dem Code verbreitet.

@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.mo.bibliothek.data.Book
 import de.mo.bibliothek.data.Found
+import de.mo.bibliothek.data.GeminiException
 import de.mo.bibliothek.data.ReadStatus
 import kotlinx.coroutines.launch
 
@@ -103,7 +104,7 @@ fun AddScreen(
     var query by rememberSaveable { mutableStateOf(initialQuery) }
     var results by remember { mutableStateOf<List<Found>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var failure by remember { mutableStateOf<Throwable?>(null) }
     var searched by remember { mutableStateOf(false) }
     var preview by remember { mutableStateOf<Found?>(null) }
     var work by remember { mutableStateOf<Found?>(null) }
@@ -116,12 +117,12 @@ fun AddScreen(
         val q = query.trim()
         if (q.isEmpty()) return
         focus.clearFocus()
-        loading = true; error = null
+        loading = true; failure = null
         searchJob?.cancel()
         searchJob = scope.launch {
             val result = actions.search(q)
             loading = false; searched = true
-            result.onSuccess { results = it }.onFailure { results = emptyList(); error = offline }
+            result.onSuccess { results = it }.onFailure { results = emptyList(); failure = it }
         }
     }
 
@@ -252,9 +253,9 @@ fun AddScreen(
             }
         }
 
-        error?.let { msg ->
+        failure?.let { cause ->
             item {
-                Text(msg, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(24.dp))
+                Text(geminiErrorText(cause) ?: offline, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(24.dp))
             }
         }
 
@@ -278,7 +279,7 @@ fun AddScreen(
             }
         }
 
-        if (searched && results.isEmpty() && !loading && error == null) item {
+        if (searched && results.isEmpty() && !loading && (failure == null || failure is GeminiException)) item {
             Column(Modifier.padding(24.dp)) {
                 Text(tr("Keine passenden Treffer in den Buchkatalogen gefunden.", "لم يتم العثور على نتائج مناسبة في فهارس الكتب."))
                 Spacer(Modifier.height(8.dp))

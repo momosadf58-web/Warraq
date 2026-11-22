@@ -143,8 +143,8 @@ fun ProfileScreen(
             Column {
                 Action(
                     Icons.Outlined.Key,
-                    tr("Ollama-Schlüssel", "مفتاح Ollama"),
-                    if (aiEnabled) tr("Aktiv · Ollama Cloud · nur auf diesem Handy gespeichert", "مفعّل · محفوظ على هذا الهاتف فقط")
+                    tr("Gemini-API-Schlüssel", "مفتاح Gemini"),
+                    if (aiEnabled) tr("Aktiv · nur auf diesem Handy gespeichert", "مفعّل · محفوظ على هذا الهاتف فقط")
                     else tr("Aus · App funktioniert auch ohne", "غير مفعّل · التطبيق يعمل بدونه"),
                 ) { editKey = true }
                 if (aiEnabled) Action(Icons.Outlined.AutoAwesome, tr("Allam fragen", "اسأل علام"),
@@ -206,11 +206,11 @@ fun ProfileScreen(
         var value by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { editKey = false },
-            title = { Text(tr("Ollama-Schlüssel", "مفتاح Ollama")) },
+            title = { Text(tr("Gemini-API-Schlüssel", "مفتاح Gemini")) },
             text = {
                 Column {
-                    Text(tr("Schlüssel von ollama.com einfügen. Leer lassen und speichern schaltet die KI aus.",
-                        "الصق المفتاح من ollama.com. اتركه فارغاً لإيقاف الذكاء."), style = MaterialTheme.typography.bodySmall)
+                    Text(tr("Schlüssel auf aistudio.google.com/apikey erstellen und hier einfügen. Zum Löschen das Feld leer lassen und speichern.",
+                        "أنشئ مفتاحًا على aistudio.google.com/apikey والصقه هنا. لحذفه، اترك الحقل فارغًا واضغط حفظ."), style = MaterialTheme.typography.bodySmall)
                     androidx.compose.material3.OutlinedTextField(value, { value = it.trim() }, singleLine = true,
                         visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth().padding(top = 12.dp))

@@ -29,7 +29,7 @@ Im 3D-Buchladen stehen die gelesenen Bücher mit ihrem echten Cover zwischen ano
 
 In den Buchdetails stehen eine kurze Beschreibung und, wenn vorhanden, Zitate aus Wikiquote mit Link zur Quelle. Beides lässt sich als Bildkarte teilen.
 
-Optional gibt es den KI-Helfer Allam (علام). Er macht Lesetipps, beantwortet Fragen zur eigenen Sammlung und schreibt eine Kurzbeschreibung aus den vorhandenen Quellen. Dafür trägt man einen eigenen Ollama-Cloud-Schlüssel in der App ein. Ohne Schlüssel bleibt Allam aus und der Rest funktioniert normal. Was Allam schreibt, ist als KI-Text markiert. Er erfindet keine Zitate und ändert keine Buchdaten.
+Optional gibt es den KI-Helfer Allam (علام). Er macht Lesetipps, beantwortet Fragen zur eigenen Sammlung und schreibt eine Kurzbeschreibung aus den vorhandenen Quellen. Erstelle dafür einen [Gemini-API-Schlüssel](https://aistudio.google.com/apikey) und speichere ihn unter **Profil & Einstellungen → Allam, KI-Buchhändler → Gemini-API-Schlüssel**. Zum Löschen das Feld leer lassen und speichern. Ohne Schlüssel bleibt Allam aus und der Rest funktioniert normal. Was Allam schreibt, ist als KI-Text markiert. Er erfindet keine Zitate und ändert keine Buchdaten.
 
 ## Installieren
 
@@ -72,7 +72,7 @@ Arabische Cover liest die App mit PaddleOCR und Tesseract als Rückfall, lateini
 
 ## Daten und Privatsphäre
 
-Es gibt keine Anmeldung, keine Werbung und kein Tracking. Bei einer Suche geht nur der Suchbegriff an die genannten Kataloge. Wer Allam einschaltet, schickt für die jeweilige Anfrage Titel, Autoren, Lesestatus und Bewertungen der betroffenen Bücher an Ollama. Profildaten gehen nicht mit. Der KI-Schlüssel liegt im geschützten App-Speicher und wird nicht mitgesichert.
+Es gibt keine Anmeldung, keine Werbung und kein Tracking. Bei einer Suche geht der Suchbegriff an die genannten Kataloge. Ist Allam aktiv, kann Gemini bei einer erfolglosen Suche weitere Suchbegriffe vorschlagen. Je nach KI-Funktion erhält Gemini Titel, Autoren, Genre, Sprache, Seitenzahl, Lesestatus, Bewertung, Lesejahr, vorhandene Beschreibungen und Zitate der betroffenen Bücher. Profildaten gehen nicht mit. Der KI-Schlüssel liegt im geschützten App-Speicher und wird nicht mitgesichert.
 
 ## Lizenz
 
@@ -88,7 +88,7 @@ Fehler und Vorschläge bitte als [Issue](https://github.com/momosadf58-web/Warra
 
 Warraq is an Android app for your own book collection, built for people who read in German and Arabic. Point the camera at a cover, pick the exact edition and the book is on your shelf. Arabic is handled properly: right-to-left layout, on-device recognition of Arabic covers (PaddleOCR, Tesseract) and extra catalogues for Arabic books (Hindawi, Alrewaq) next to Open Library, the German National Library and Google Books.
 
-There are three reading states, statistics, a random pick from your unread books and an offline 3D bookshop modelled on an old Syrian souk where your finished books stand with their real covers. An optional assistant called Allam gives reading tips and short summaries if you enter your own Ollama Cloud key. No account and no tracking. Your library stays on the phone.
+There are three reading states, statistics, a random pick from your unread books and an offline 3D bookshop modelled on an old Syrian souk where your finished books stand with their real covers. An optional assistant called Allam gives reading tips and short summaries if you enter your own Gemini API key. Warraq stores your library on the phone. With Allam enabled, Gemini receives the book details relevant to each request.
 
 Download the APK from [Releases](https://github.com/momosadf58-web/Warraq/releases/latest) (Android 8.0+), or build it with JDK 17 and SDK 35: `cd Code/Android && ./gradlew assembleDebug`.
 

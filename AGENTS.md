@@ -20,7 +20,7 @@ Android-App „Warraq / الورّاق“, Paket `de.mo.bibliothek`, aktuell Ver
 - Arabische Bücher, Autoren, Texterkennung und RTL sind gleichwertige Kernanforderungen.
 - Nutzerdaten schützen: Bücher, Cover, unbekannte JSON-Felder, Status, Notizen und Bewertungen erhalten. Daten- und Coverkorrekturen nur nach bestätigter Auswahl. Die App beim Testen nie deinstallieren.
 - Paketname und bestehende Signatur beibehalten.
-- **Keine Geheimnisse ins Repository:** keine API-Schlüssel (Ollama, Google), Signierschlüssel, Kennwörter oder echte Nutzerbibliotheken. Schlüssel trägt die Nutzerin oder der Nutzer selbst in der App ein (`noBackupFilesDir`). Die Schlüsseldatei nie auslesen.
+- **Keine Geheimnisse ins Repository:** keine API-Schlüssel (Gemini, Katalogdienste), Signierschlüssel, Kennwörter oder echte Nutzerbibliotheken. Den Gemini-Schlüssel trägt die Nutzerin oder der Nutzer selbst in der App ein (`noBackupFilesDir/gemini.key`). Nur die App liest ihn beim Senden einer Anfrage. Schlüssel nie loggen.
 - Die KI „Allam“ ist nie Faktenquelle: ISBN, Cover und Jahr kommen nur aus Katalogen. Keine privaten Profildaten in KI-Prompts.
 - Die KI-Lesehilfe nutzt nur vorhandene Beschreibungen und Zitate, schreibt keine Buchdaten um und erzeugt niemals Originalzitate. KI-Kernaussagen werden auch auf Bildkarten ausdrücklich als KI, sinngemäß und „kein Zitat“ gekennzeichnet.
 - Ponytail: kleinste vollständige Lösung, gezielt testen, keine unnötigen Testschleifen. Ein früher bestandener Test ist kein Beleg für neuen Code.

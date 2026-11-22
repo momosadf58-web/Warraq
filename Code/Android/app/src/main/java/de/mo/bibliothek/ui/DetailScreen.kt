@@ -108,7 +108,7 @@ class DetailActions(
     val notes: (String) -> Unit,
     val lists: (List<String>) -> Unit,
     val fetchKnowledge: suspend (Book) -> Result<de.mo.bibliothek.data.BookKnowledge>,
-    /** Frage an den KI-Buchhändler; null ohne Ollama-Schlüssel. */
+    /** Frage an den KI-Buchhändler; null ohne Gemini-Schlüssel. */
     val askAi: (suspend (String, Boolean) -> Result<String>)? = null,
     val readingNotes: (suspend (Book, String, List<de.mo.bibliothek.data.BookQuote>, Boolean) -> Result<de.mo.bibliothek.data.AiBookNotes>)? = null,
 )

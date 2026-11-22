@@ -3,6 +3,7 @@ package de.mo.bibliothek
 import android.app.Application
 import android.content.Context
 import android.net.Uri
+import android.util.AtomicFile
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import de.mo.bibliothek.data.Book
@@ -10,6 +11,7 @@ import de.mo.bibliothek.data.BookLookup
 import de.mo.bibliothek.data.BookKnowledge
 import de.mo.bibliothek.data.KnowledgeLookup
 import de.mo.bibliothek.data.Found
+import de.mo.bibliothek.data.GeminiException
 import de.mo.bibliothek.data.LibraryRepository
 import de.mo.bibliothek.data.ReadStatus
 import de.mo.bibliothek.data.sameAs
@@ -79,21 +81,40 @@ class BookieViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     // Schlüssel nur im nicht gesicherten App-Bereich: nie in library.json, ZIP-Export oder Android-Backup.
-    private val aiKeyFile = java.io.File(application.noBackupFilesDir, "ollama.key")
+    private val aiKeyFile = AtomicFile(java.io.File(application.noBackupFilesDir, "gemini.key"))
     private val _aiEnabled = MutableStateFlow(false)
     val aiEnabled: StateFlow<Boolean> = _aiEnabled.asStateFlow()
     init {
-        WarraqAi.key = runCatching { aiKeyFile.readText().trim() }.getOrDefault("")
+        WarraqAi.geminiKeyFile = aiKeyFile
         _aiEnabled.value = WarraqAi.enabled
     }
 
     fun setAiKey(key: String) {
-        readingCache.clear()
         val clean = key.trim()
-        runCatching { if (clean.isEmpty()) aiKeyFile.delete() else aiKeyFile.writeText(clean) }
-        WarraqAi.key = clean
+        val saved = runCatching {
+            synchronized(aiKeyFile) {
+                if (clean.isEmpty()) {
+                    aiKeyFile.delete()
+                    check(!aiKeyFile.baseFile.exists())
+                } else {
+                    val output = aiKeyFile.startWrite()
+                    try {
+                        output.write(clean.toByteArray(Charsets.UTF_8))
+                        aiKeyFile.finishWrite(output)
+                    } catch (e: java.io.IOException) {
+                        aiKeyFile.failWrite(output)
+                        throw e
+                    }
+                }
+            }
+        }
+        if (saved.isFailure) {
+            _message.value = "Gemini-Schlüssel konnte nicht gespeichert oder gelöscht werden."
+            return
+        }
+        readingCache.clear()
         _aiEnabled.value = WarraqAi.enabled
-        _message.value = if (clean.isEmpty()) "KI ausgeschaltet." else "KI-Schlüssel gespeichert."
+        _message.value = if (clean.isEmpty()) "KI ausgeschaltet." else "Gemini-Schlüssel gespeichert."
     }
 
     private suspend fun <T> ai(block: () -> T): Result<T> = withContext(Dispatchers.IO) { runCatching(block) }
@@ -101,10 +122,10 @@ class BookieViewModel(application: Application) : AndroidViewModel(application) 
     suspend fun aiTips(wish: String, arabic: Boolean) = ai { WarraqAi.tips(_books.value, wish, arabic) }
     suspend fun aiAsk(question: String, arabic: Boolean) = ai { WarraqAi.askLibrary(_books.value, question, arabic) }
     suspend fun aiGenres() = ai { WarraqAi.genres(_books.value) }
-    suspend fun aiYear(year: Int, arabic: Boolean) = ai { WarraqAi.yearReview(_books.value, year, _settings.value.yearGoal, arabic) }
+    suspend fun aiYear(year: Int, arabic: Boolean) = ai { WarraqAi.yearReview(_books.value, year, arabic) }
     suspend fun aiAskBook(book: Book, question: String, arabic: Boolean) = ai { WarraqAi.askBook(book, question, arabic, _books.value) }
     suspend fun aiReadingNotes(book: Book, description: String, quotes: List<de.mo.bibliothek.data.BookQuote>, arabic: Boolean) = ai {
-        check(WarraqAi.enabled) { "Kein Ollama-Schlüssel." }
+        check(WarraqAi.enabled) { "Kein Gemini-Schlüssel." }
         val key = ReadingKey(book.id, book.title, book.author, description, quotes, arabic)
         readingCache[key] ?: WarraqAi.bookNotes(book, description, quotes, arabic).also { readingCache[key] = it }
     }
@@ -116,7 +137,10 @@ class BookieViewModel(application: Application) : AndroidViewModel(application) 
     /** Ohne Katalogtreffer: KI bereinigt die Eingabe und liefert Original-/Übersetzungstitel als weitere Suchen. */
     private fun withAiVariants(query: String, direct: List<Found>): List<Found> {
         if (direct.isNotEmpty() || !WarraqAi.enabled) return direct
-        val variants = runCatching { WarraqAi.searchVariants(query) }.getOrDefault(emptyList())
+        val variants = runCatching { WarraqAi.searchVariants(query) }.getOrElse {
+            if (it is GeminiException) throw it
+            emptyList()
+        }
             .filter { searchKey(it) != searchKey(query) }
         return variants.flatMap { v -> runCatching { BookLookup.search(v) }.getOrDefault(emptyList()).take(10) }
             .distinctBy { it.isbn.ifEmpty { it.sourceUrl + it.title } }

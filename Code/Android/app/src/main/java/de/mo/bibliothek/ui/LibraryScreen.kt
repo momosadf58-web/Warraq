@@ -385,7 +385,7 @@ private fun HeaderCompact(
                 Icon(Icons.Outlined.Casino, contentDescription = tr("Orakel / Zufälliges Buch", "قرعة الكتب"))
             }
 
-            // KI-Buchhändler, nur mit Ollama-Schlüssel sichtbar
+            // KI-Buchhändler, nur mit Gemini-Schlüssel sichtbar
             if (onAssistant != null) IconButton(onClick = onAssistant) {
                 Icon(Icons.Outlined.Forum, contentDescription = tr("Allam fragen", "اسأل علام"))
             }
