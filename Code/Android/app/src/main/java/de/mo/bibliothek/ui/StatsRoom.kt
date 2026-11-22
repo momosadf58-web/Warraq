@@ -82,6 +82,10 @@ fun StatsScreen(books: List<Book>, goal: Int, onGoal: (Int) -> Unit, onOpen: (St
             Text(tr("* Seitenumfang abgeschlossener Bücher mit Seitenangabe.", "* مجموع صفحات الكتب المكتملة ذات عدد صفحات معروف."),
                 style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(horizontal=24.dp))
         }
+        item { GoalRing(thisYear.size, goal, year) { editGoal = true } }
+        item { YearBars(read) }
+        item { LanguageBar(books) }
+        item { TopGenres(books) }
         item {
             Text(tr("Deine Sammlung", "مجموعتك")+" · "+booksCount(selected.size),style=MaterialTheme.typography.titleLarge,
                 modifier=Modifier.padding(start=24.dp,top=24.dp,bottom=8.dp))
@@ -114,6 +118,122 @@ fun StatsScreen(books: List<Book>, goal: Int, onGoal: (Int) -> Unit, onOpen: (St
         item { Spacer(Modifier.height(32.dp)) }
     }
     if(editGoal) GoalDialog(goal,{onGoal(it);editGoal=false},{editGoal=false})
+}
+
+@Composable
+private fun ChartCard(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Surface(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow) {
+        Column(Modifier.padding(18.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(12.dp))
+            content()
+        }
+    }
+}
+
+/** Jahresziel als Fortschrittsring; Antippen ändert das Ziel. */
+@Composable
+private fun GoalRing(done: Int, goal: Int, year: Int, onEdit: () -> Unit) {
+    val progress by animateFloatAsState((done.toFloat() / goal.coerceAtLeast(1)).coerceIn(0f, 1f), tween(700), label = "goal")
+    val track = MaterialTheme.colorScheme.surfaceContainerHighest
+    val fill = MaterialTheme.colorScheme.primary
+    ChartCard(tr("Jahresziel $year", "هدف سنة $year")) {
+        Row(Modifier.fillMaxWidth().clickable(onClick = onEdit), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(96.dp), contentAlignment = Alignment.Center) {
+                Canvas(Modifier.fillMaxSize()) {
+                    val stroke = Stroke(width = 12.dp.toPx(), cap = StrokeCap.Round)
+                    val inset = stroke.width / 2
+                    drawArc(track, -90f, 360f, false, Offset(inset, inset), Size(size.width - stroke.width, size.height - stroke.width), style = stroke)
+                    drawArc(fill, -90f, 360f * progress, false, Offset(inset, inset), Size(size.width - stroke.width, size.height - stroke.width), style = stroke)
+                }
+                Text("$done/$goal", style = MaterialTheme.typography.titleMedium)
+            }
+            Spacer(Modifier.width(18.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    if (done >= goal) tr("Ziel erreicht – stark!", "تحقق الهدف، أحسنت!")
+                    else tr("Noch ${goal - done} Bücher bis zum Ziel.", "باقٍ ${goal - done} كتب للوصول إلى الهدف."),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                Text(tr("Antippen, um das Ziel zu ändern", "المس لتغيير الهدف"), style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
+            }
+        }
+    }
+}
+
+/** Gelesene Bücher pro Jahr (nur Bücher mit Lesedatum), letzte sechs Jahre mit Einträgen. */
+@Composable
+private fun YearBars(read: List<Book>) {
+    val perYear = remember(read) { read.mapNotNull { readingYear(it.readAt) }.groupingBy { it }.eachCount().toSortedMap().entries.toList().takeLast(6) }
+    if (perYear.isEmpty()) return
+    val max = perYear.maxOf { it.value }.coerceAtLeast(1)
+    val color = MaterialTheme.colorScheme.primary
+    ChartCard(tr("Gelesen pro Jahr", "المقروء في كل سنة")) {
+        Row(Modifier.fillMaxWidth().height(140.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Bottom) {
+            perYear.forEach { (y, n) ->
+                Column(Modifier.weight(1f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
+                    Text("$n", style = MaterialTheme.typography.labelMedium)
+                    Box(Modifier.fillMaxWidth(0.7f).fillMaxHeight(0.75f * n / max).clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)).background(color))
+                    Text("$y", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
+                }
+            }
+        }
+        val undated = read.count { readingYear(it.readAt) == null }
+        if (undated > 0) Text(tr("$undated gelesene Bücher ohne Lesedatum sind nicht enthalten.", "$undated كتب مقروءة بلا تاريخ غير محسوبة."),
+            style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
+    }
+}
+
+/** Anteil arabischer, deutscher und sonstiger Bücher als geteilter Balken. */
+@Composable
+private fun LanguageBar(books: List<Book>) {
+    if (books.isEmpty()) return
+    val ar = books.count { it.isArabic }
+    val de = books.count { !it.isArabic && it.isGerman }
+    val other = books.size - ar - de
+    val parts = listOf(
+        Triple("العربية", ar, MaterialTheme.colorScheme.primary),
+        Triple("Deutsch", de, LocalWood.current.reading),
+        Triple(tr("Andere", "أخرى"), other, MaterialTheme.colorScheme.outline),
+    ).filter { it.second > 0 }
+    ChartCard(tr("Sprachen", "اللغات")) {
+        Row(Modifier.fillMaxWidth().height(18.dp).clip(RoundedCornerShape(9.dp))) {
+            parts.forEach { (_, n, c) -> Box(Modifier.weight(n.toFloat()).fillMaxHeight().background(c)) }
+        }
+        Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            parts.forEach { (label, n, c) ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(10.dp).clip(RoundedCornerShape(5.dp)).background(c))
+                    Text(" $label $n", style = MaterialTheme.typography.labelMedium)
+                }
+            }
+        }
+    }
+}
+
+/** Die fünf häufigsten Genres (nur Bücher mit Genre-Angabe). */
+@Composable
+private fun TopGenres(books: List<Book>) {
+    val top = remember(books) { books.map { it.genre.trim() }.filter { it.isNotEmpty() }.groupingBy { it }.eachCount().entries.sortedByDescending { it.value }.take(5) }
+    if (top.isEmpty()) return
+    val max = top.first().value
+    val color = LocalWood.current.read
+    ChartCard(tr("Häufigste Genres", "الأنواع الأكثر حضوراً")) {
+        top.forEach { (genre, n) ->
+            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("⁨$genre⁩", style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(0.45f))
+                Box(Modifier.weight(0.45f).height(10.dp)) {
+                    Box(Modifier.fillMaxHeight().fillMaxWidth(n.toFloat() / max).clip(RoundedCornerShape(5.dp)).background(color))
+                }
+                Text("$n", style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(0.1f).padding(start = 8.dp))
+            }
+        }
+        val without = books.count { it.genre.isBlank() }
+        if (without > 0) Text(tr("$without Bücher ohne Genre – „Genres ordnen“ bei Allam hilft.", "$without كتب بلا نوع – „ترتيب الأنواع“ لدى علام يساعد."),
+            style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
+    }
 }
 
 @Composable

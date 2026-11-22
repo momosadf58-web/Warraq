@@ -40,6 +40,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -241,19 +242,54 @@ fun StatusPill(status: ReadStatus, title: String, onChange: (ReadStatus) -> Unit
                 )
             }
         }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }, shape = RoundedCornerShape(16.dp)) {
-            ReadStatus.entries.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(option.label(), color = if (option == status) statusColor(option) else MaterialTheme.colorScheme.onSurface) },
-                    leadingIcon = { Icon(statusIcon(option), null, tint = statusColor(option)) },
-                    trailingIcon = { if (option == status) Icon(Icons.Filled.Check, null, tint = statusColor(option)) },
-                    onClick = {
-                        open = false
-                        if (option != status) onChange(option)
-                    },
+        StatusMenu(open, status, { open = false }, onChange)
+    }
+}
+
+@Composable
+private fun StatusMenu(open: Boolean, status: ReadStatus, dismiss: () -> Unit, onChange: (ReadStatus) -> Unit) {
+    DropdownMenu(expanded = open, onDismissRequest = dismiss, shape = RoundedCornerShape(16.dp)) {
+        ReadStatus.entries.forEach { option ->
+            DropdownMenuItem(
+                text = { Text(option.label(), color = if (option == status) statusColor(option) else MaterialTheme.colorScheme.onSurface) },
+                leadingIcon = { Icon(statusIcon(option), null, tint = statusColor(option)) },
+                trailingIcon = { if (option == status) Icon(Icons.Filled.Check, null, tint = statusColor(option)) },
+                onClick = {
+                    dismiss()
+                    if (option != status) onChange(option)
+                },
+            )
+        }
+    }
+}
+
+/**
+ * Kleines Statuszeichen an der Cover-Ecke (statt einer Knopfreihe unter dem Regal).
+ * Antippen öffnet dieselbe Auswahl Ungelesen / Lese ich gerade / Gelesen.
+ */
+@Composable
+fun StatusBadge(status: ReadStatus, title: String, onChange: (ReadStatus) -> Unit, modifier: Modifier = Modifier) {
+    var open by remember { mutableStateOf(false) }
+    val color = statusColor(status)
+    val description = "$title: ${status.label()}"
+    Box(modifier) {
+        Surface(
+            onClick = { open = true },
+            shape = androidx.compose.foundation.shape.CircleShape,
+            color = if (status == ReadStatus.UNREAD) MaterialTheme.colorScheme.surface.copy(alpha = 0.82f) else color,
+            shadowElevation = 3.dp,
+            modifier = Modifier.size(28.dp).semantics { contentDescription = description },
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    statusIcon(status), null,
+                    tint = if (status == ReadStatus.UNREAD) MaterialTheme.colorScheme.onSurfaceVariant
+                        else if (color.luminance() > .45f) Color(0xFF172014) else Color.White,
+                    modifier = Modifier.size(16.dp),
                 )
             }
         }
+        StatusMenu(open, status, { open = false }, onChange)
     }
 }
 

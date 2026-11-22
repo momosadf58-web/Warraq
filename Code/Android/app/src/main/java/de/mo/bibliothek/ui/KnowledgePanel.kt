@@ -57,9 +57,8 @@ fun KnowledgePanel(book:Book,fetch:suspend (Book)->Result<BookKnowledge>,coverFi
                     TextButton(onClick={uri.openUri(quote.source.url)}){Text(quote.source.title)}
                     TextButton(onClick={share(quote)}){Text(tr("Als Bild teilen", "مشاركة كصورة"))}
                 }
-            } else if(!loading) {
-                Text(tr("Keine zugeordneten Buchzitate gefunden.", "لم يُعثر على اقتباسات موثقة لهذا الكتاب."),
-                    style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=10.dp))
+            } else if(!loading && readingNotes==null) {
+                // Ohne Allam die regelbasierte Kernaussage; mit Allam übernimmt seine Lesehilfe (keine Doppelung, keine Leer-Meldung).
                 idea?.let{quote->
                     HorizontalDivider(Modifier.padding(vertical=14.dp))
                     Text(ideaLabel,style=MaterialTheme.typography.labelLarge,color=MaterialTheme.colorScheme.onSurfaceVariant)

@@ -38,12 +38,14 @@ fun shortBlurb(text: String, limit: Int = 320): String {
 /** Ein Satz der Beschreibung, der das Thema benennt und nicht schon im Kurztext steht. Kein Autorzitat. */
 fun keyIdea(text: String): String? {
     val shown = shortBlurb(text)
-    val candidates = sentences(text).filter { it.length in 40..300 && !shown.contains(it) && !SPOILER.containsMatchIn(it) && THESIS.containsMatchIn(it) }
+    val candidates = sentences(text).filter { it.length in 40..300 && !shown.contains(it) && !SPOILER.containsMatchIn(it) && !PUBLISHING.containsMatchIn(it) && THESIS.containsMatchIn(it) }
     // A sentence naming the book itself states the thesis most directly.
     return candidates.firstOrNull { THIS_BOOK.containsMatchIn(it) } ?: candidates.firstOrNull()
 }
 
 private val THIS_BOOK = Regex("(?i)\\b(this book|dieses buch)\\b|هذا الكتاب")
+/** Sätze über Erscheinen, Auflage, Verkauf oder Übersetzungen sind keine Kernaussage. */
+internal val PUBLISHING = Regex("(?i)\\b(published|publication|sold|copies|bestseller|translated|erschien|erschienen|veröffentlicht|verkauft|exemplare|auflage|übersetzt)\\b|صدر|نُشر|نشر|نسخة|طبعة|بيع|ترجم|حقوق")
 
 private fun hindawiId(book: Book): String =
     runCatching { JSONObject(book.extra).optString("workKey") }.getOrDefault("").removePrefix("hindawi:").takeIf { it.matches(Regex("[0-9]+")) }

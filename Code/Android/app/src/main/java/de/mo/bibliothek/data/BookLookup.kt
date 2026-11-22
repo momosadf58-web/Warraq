@@ -214,7 +214,8 @@ object BookLookup {
                 publisher = info.optString("publisher"),
                 published = info.optString("publishedDate").take(4),
                 pages = info.optInt("pageCount"),
-                genre = info.optJSONArray("categories")?.optString(0).orEmpty(),
+                // Google-Kategorien sind englische Schlagwörter („Fiction“) – kein Genre übernehmen; Mo ordnet Genres selbst/mit Allam.
+                genre = "",
                 language = languageName(info.optString("language")),
                 description = info.optString("description").replace(Regex("<[^>]+>"), "").trim(),
                 source = "Google Books",
@@ -241,7 +242,8 @@ object BookLookup {
             // Search aggregates describe a work, not one edition. ISBN/year/publisher must come from an edition record.
             Found(title = title, author = doc.optJSONArray("author_name")?.optString(0).orEmpty(),
                 isbn = "", coverUrl = if (coverId > 0) "https://covers.openlibrary.org/b/id/$coverId-L.jpg" else "",
-                publisher = "", published = "", pages = 0, genre = doc.optJSONArray("subject")?.optString(0).orEmpty(),
+                // Open-Library-Subjects sind englische Schlagwörter („Storytelling, fiction“) – nicht als Genre übernehmen.
+                publisher = "", published = "", pages = 0, genre = "",
                 language = "", description = "", source = "Open Library",
                 sourceUrl = "https://openlibrary.org$key", workKey = key)
         }

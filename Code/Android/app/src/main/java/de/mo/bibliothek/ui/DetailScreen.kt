@@ -270,11 +270,12 @@ fun DetailScreen(
                 }
 
                 // Kompakte Metadaten-Zeile
+                // Jeder Teil wird mit FSI…PDI isoliert, sonst springt z. B. „Seiten“ hinter einen arabischen Verlag.
                 val meta = listOfNotNull(
                     book.publisher.ifEmpty { null },
                     if (book.pages > 0) "${book.pages} " + tr("Seiten", "صفحة") else null,
                     book.published.ifEmpty { null },
-                ).joinToString(" · ")
+                ).joinToString(" · ") { "⁨$it⁩" }
                 if (meta.isNotEmpty()) {
                     Text(
                         meta,

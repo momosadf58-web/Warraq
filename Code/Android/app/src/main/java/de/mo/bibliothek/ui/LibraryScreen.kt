@@ -161,8 +161,8 @@ fun LibraryScreen(
             item(key = "search") {
                 SearchField(query) { query = it }
             }
-            item(key = "unified_filters") {
-                // Einzeilige, elegante und platzsparende Filterleiste
+            item(key = "unified_filters") { Column {
+                // Status-Filter; die Sprache folgt in einer eigenen Zeile
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 20.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -183,33 +183,28 @@ fun LibraryScreen(
                             onClick = { filter = if (filter == s.name) null else s.name }
                         )
                     }
-                    item {
-                        Box(
-                            Modifier
-                                .padding(horizontal = 4.dp)
-                                .height(20.dp)
-                                .width(1.dp)
-                                .background(MaterialTheme.colorScheme.outlineVariant)
-                        )
-                    }
-                    item {
-                        FilterPill(
-                            text = "العربية ${selection.arabicCount}",
-                            selected = lang == "ar",
-                            subtle = true,
-                            onClick = { lang = if (lang == "ar") null else "ar" }
-                        )
-                    }
-                    item {
-                        FilterPill(
-                            text = "Deutsch ${selection.germanCount}",
-                            selected = lang == "de",
-                            subtle = true,
-                            onClick = { lang = if (lang == "de") null else "de" }
-                        )
-                    }
                 }
-            }
+                // Sprache als eigene, immer sichtbare Zeile (früher rechts außerhalb des Bildschirms).
+                Row(
+                    Modifier.padding(start = 20.dp, end = 20.dp, bottom = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(tr("Sprache", "اللغة"), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    FilterPill(
+                        text = "العربية ${selection.arabicCount}",
+                        selected = lang == "ar",
+                        subtle = true,
+                        onClick = { lang = if (lang == "ar") null else "ar" }
+                    )
+                    FilterPill(
+                        text = "Deutsch ${selection.germanCount}",
+                        selected = lang == "de",
+                        subtle = true,
+                        onClick = { lang = if (lang == "de") null else "de" }
+                    )
+                }
+            } }
             if (query.isNotBlank() || filter != null || lang != null) {
                 item(key = "result_count") {
                     Text(
@@ -542,27 +537,13 @@ private fun ShelfRow(row: List<Book>, columns: Int, actions: BookActions, first:
                     )
                 )
         )
-        // Regalschatten nach unten
+        // Regalschatten nach unten; der Status sitzt als antippbares Zeichen an der Cover-Ecke.
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(10.dp)
+                .height(if (last) 18.dp else 10.dp)
                 .background(Brush.verticalGradient(listOf(wood.shadow, Color.Transparent)))
         )
-
-        // Statusknöpfe direkt unter den Büchern (Mo's gewünschte 3 Knöpfe)
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp)
-                .padding(top = 2.dp, bottom = if (last) 18.dp else 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            row.forEach { book ->
-                StatusPill(book.readStatus, book.title, { actions.status(book.id, it) }, Modifier.weight(1f), compact = true)
-            }
-            repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
-        }
     }
 }
 
@@ -588,6 +569,10 @@ private fun ShelfBook(book: Book, actions: BookActions, modifier: Modifier) {
                 .padding(6.dp)
                 .size(16.dp),
         )
+        StatusBadge(
+            book.readStatus, book.title, { actions.status(book.id, it) },
+            Modifier.align(Alignment.BottomStart).padding(6.dp),
+        )
     }
 }
 
@@ -605,15 +590,16 @@ private fun GridRow(row: List<Book>, columns: Int, actions: BookActions, modifie
                     .weight(1f)
                     .bookTap { actions.open(book.id) }
             ) {
-                BookCover(book.title, book.author, coverModel(book, actions.coverFile), Modifier.fillMaxWidth().aspectRatio(0.66f), titleSize = 13)
+                Box {
+                    BookCover(book.title, book.author, coverModel(book, actions.coverFile), Modifier.fillMaxWidth().aspectRatio(0.66f), titleSize = 13)
+                    StatusBadge(book.readStatus, book.title, { actions.status(book.id, it) }, Modifier.align(Alignment.BottomStart).padding(6.dp))
+                }
                 Spacer(Modifier.height(8.dp))
                 Text(book.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (book.author.isNotEmpty()) Text(
                     book.author, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
-                Spacer(Modifier.height(8.dp))
-                StatusPill(book.readStatus, book.title, { actions.status(book.id, it) }, compact = true)
             }
         }
         repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
