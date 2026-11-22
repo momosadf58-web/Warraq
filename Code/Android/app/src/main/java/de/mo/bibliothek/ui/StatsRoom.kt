@@ -216,9 +216,11 @@ private fun LanguageBar(books: List<Book>) {
 /** Die fünf häufigsten Genres (nur Bücher mit Genre-Angabe). */
 @Composable
 private fun TopGenres(books: List<Book>) {
-    val top = remember(books) { books.map { it.genre.trim() }.filter { it.isNotEmpty() }.groupingBy { it }.eachCount().entries.sortedByDescending { it.value }.take(5) }
-    if (top.isEmpty()) return
-    val max = top.first().value
+    // Nur Genres mit mindestens zwei Büchern: Einzelfälle sagen über die Sammlung nichts aus.
+    val top = remember(books) { books.map { it.genre.trim() }.filter { it.isNotEmpty() }.groupingBy { it }.eachCount().entries.filter { it.value >= 2 }.sortedByDescending { it.value }.take(5) }
+    val without = books.count { it.genre.isBlank() }
+    if (top.isEmpty() && without == 0) return
+    val max = top.firstOrNull()?.value ?: 1
     val color = LocalWood.current.read
     ChartCard(tr("Häufigste Genres", "الأنواع الأكثر حضوراً")) {
         top.forEach { (genre, n) ->
@@ -230,7 +232,7 @@ private fun TopGenres(books: List<Book>) {
                 Text("$n", style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(0.1f).padding(start = 8.dp))
             }
         }
-        val without = books.count { it.genre.isBlank() }
+        if (top.isEmpty()) Text(tr("Noch kein Genre mit mehreren Büchern.", "لا يوجد بعد نوع يضم أكثر من كتاب."), style = MaterialTheme.typography.bodyMedium)
         if (without > 0) Text(tr("$without Bücher ohne Genre – „Genres ordnen“ bei Allam hilft.", "$without كتب بلا نوع – „ترتيب الأنواع“ لدى علام يساعد."),
             style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
     }

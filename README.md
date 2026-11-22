@@ -35,7 +35,7 @@ Optional gibt es den KI-Helfer Allam (علام). Er macht Lesetipps, beantwortet
 
 ## Installieren
 
-1. Unter [Releases](https://github.com/momosadf58-web/Warraq/releases/latest) die Datei `Warraq-3.6.0.apk` laden.
+1. Unter [Releases](https://github.com/momosadf58-web/Warraq/releases/latest) die Datei `Warraq-3.6.1.apk` laden.
 2. Die Datei auf dem Handy öffnen. Android fragt einmal nach der Erlaubnis, Apps aus dieser Quelle zu installieren.
 3. Die App fragt beim ersten Scannen nach der Kamera. Internet braucht sie nur für die Buchsuche.
 
